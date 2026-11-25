@@ -46,11 +46,35 @@ namespace UNPeacekeepers
             if(journal.Count>300)journal.RemoveAt(journal.Count-1);
         }
         public IEnumerable<string> Entries => journal;
-        public static int Interval(int g) => Mathf.RoundToInt(Mathf.Lerp(12f,3f,Mathf.Clamp01((-g-80)/20f))*Day);
+        // Piecewise linear interpolation between the agreed goodwill thresholds.
+        private static readonly float[] GoodwillStrength = { 1.5f, 2f, 3f, 4f, 5f };
+        private static readonly float[] GoodwillDays = { 12f, 9f, 6f, 4f, 3f };
+        private static float EscalationValue(int g, float[] values)
+        {
+            float step = Mathf.Clamp((-g - 80) / 5f, 0f, 4f);
+            int lo = Mathf.Min(3, Mathf.FloorToInt(step));
+            return Mathf.Lerp(values[lo], values[lo+1], step-lo);
+        }
+        public static int Interval(int g) => Mathf.RoundToInt(EscalationValue(g, GoodwillDays)*Day);
+        public static float GoodwillMultiplier(int g) => EscalationValue(g, GoodwillStrength);
         public static float RaidPoints(Map map,int g)
         {
-            float t=Mathf.Clamp01((-g-80)/20f);
-            return Mathf.Max(Mathf.Lerp(500f,10000f,t),StorytellerUtility.DefaultThreatPointsNow(map)*Mathf.Lerp(1.5f,4f,t));
+            // Use the actual storyteller result, including other mods' threat-scaling patches.
+            // Wealth is already included there; no duplicate wealth factor, minimum, or cap.
+            return StorytellerUtility.DefaultThreatPointsNow(map)*GoodwillMultiplier(g)*UNMod.Strength;
+        }
+        public static Map RaidTarget() => Find.Maps.Where(m=>m.IsPlayerHome)
+            .OrderByDescending(m=>StorytellerUtility.DefaultThreatPointsNow(m)).FirstOrDefault();
+        public string RaidStrengthStatus(Faction un)
+        {
+            if(un==null || un.defeated || un.deactivated || un.PlayerGoodwill>-80)
+                return "UN_C_StrengthInactive".Translate().ToString();
+            var map=RaidTarget();
+            if(map==null) return "UN_C_NoMap".Translate().ToString();
+            float baseline=StorytellerUtility.DefaultThreatPointsNow(map);
+            float factor=GoodwillMultiplier(un.PlayerGoodwill);
+            float strength=UNMod.Strength;
+            return "UN_C_StrengthPreview".Translate(baseline.ToString("0"),factor.ToString("0.00"),(strength*100f).ToString("0"),(baseline*factor*strength).ToString("0")).ToString();
         }
         public string RaidStatus(Faction un)
         {
@@ -79,10 +103,10 @@ namespace UNPeacekeepers
                 nextRaid=now+Day;
                 Find.LetterStack.ReceiveLetter("UN_C_WarningTitle".Translate(),"UN_C_WarningText".Translate(g),LetterDefOf.ThreatBig);
             }
-            if(lastRaid>=0)nextRaid=Math.Min(nextRaid<0?int.MaxValue:nextRaid,lastRaid+Interval(g));
+            if(lastRaid>=0)nextRaid=lastRaid+Interval(g);
             if(now<nextRaid)return;
             if(!un.HostileTo(Faction.OfPlayer))return;
-            var map=Find.Maps.Where(m=>m.IsPlayerHome).OrderByDescending(m=>StorytellerUtility.DefaultThreatPointsNow(m)).FirstOrDefault();
+            var map=RaidTarget();
             if(map==null)return;
             float points=RaidPoints(map,g);
             var parms=new IncidentParms{target=map,faction=un,points=points,forced=true,raidStrategy=RaidStrategyDefOf.ImmediateAttack,raidArrivalMode=PawnsArrivalModeDefOf.EdgeWalkIn};
@@ -204,11 +228,12 @@ namespace UNPeacekeepers
             Text.Font=GameFont.Small;
             Widgets.Label(new Rect(0,34,rect.width,25),"UN_StatusLine".Translate(un==null?"—":un.PlayerGoodwill.ToString(),un?.leader?.LabelShortCap.ToString()??"—",Authorization.Granted?"UN_Yes".Translate():"UN_No".Translate()));
             Widgets.Label(new Rect(0,62,rect.width,25),comp?.RaidStatus(un)??"—");
-            Widgets.Label(new Rect(0,90,rect.width,25),"UN_C_HistoryTitle".Translate());
+            Widgets.Label(new Rect(0,90,rect.width,42),comp?.RaidStrengthStatus(un)??"—");
+            Widgets.Label(new Rect(0,135,rect.width,25),"UN_C_HistoryTitle".Translate());
             var entries=comp?.Entries.ToList()??new List<string>();
             float width=rect.width-22;
             var heights=entries.Select(e=>Math.Max(28,Text.CalcHeight(e,width-8)+8)).ToList();
-            Widgets.BeginScrollView(new Rect(0,120,rect.width,rect.height-170),ref scroll,new Rect(0,0,width,Math.Max(35,heights.Sum())));
+            Widgets.BeginScrollView(new Rect(0,165,rect.width,rect.height-215),ref scroll,new Rect(0,0,width,Math.Max(35,heights.Sum())));
             float y=0;
             if(entries.Count==0)Widgets.Label(new Rect(0,0,width,30),"UN_C_Empty".Translate());
             for(int i=0;i<entries.Count;i++){Widgets.Label(new Rect(0,y,width-8,heights[i]),entries[i]);y+=heights[i];}
