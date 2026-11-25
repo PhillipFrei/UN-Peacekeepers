@@ -1,7 +1,5 @@
-# UN Peacekeepers – 0.1.1 alpha
+# UN Peacekeepers – 0.1.4 alpha
 
-RimWorld 1.6. XML prototype, no DLL. Requires Vanilla Expanded Framework.
-Equipment: **Peacekeeper**, **UN - Blue Helm**, **UN - Armor**.
-This source snapshot does not include the original PNG textures yet. Before installing, add the complete `UNPeacekeepers/Textures/UN/` directory from the complete alpha ZIP. Alternatively install the complete ZIP directly.
-No in-game test yet. NPC mechs, missions, goodwill and prisoner tracking are not implemented.
-Keep existing defNames stable. No vanilla definition overrides.
+**XML source snapshot, not an installable release.** Install the complete alpha ZIP supplied separately. The PNG textures and original WAV file are not yet in this repository.
+
+RimWorld 1.6, Vanilla Expanded Framework. Stationary deployable shield, 4.8 radius, 12 in-game hours, original energy setting 500 retained. Helmet +5 shooting accuracy; Peacekeeper 48 damage, 300% penetration. No in-game testing yet; custom body-size mod compatibility remains open. NPC auto-activation and UN missions are not implemented.

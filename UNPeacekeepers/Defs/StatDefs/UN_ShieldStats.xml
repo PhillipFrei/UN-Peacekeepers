@@ -1,5 +1,5 @@
 <Defs>
-<StatDef><defName>UN_ShieldRadius</defName><label>UN shield radius</label><description>Radius in cells.</description><category>Basics</category><defaultBaseValue>6</defaultBaseValue><minValue>0</minValue></StatDef>
+<StatDef><defName>UN_ShieldRadius</defName><label>UN shield radius</label><description>Radius in cells.</description><category>Basics</category><defaultBaseValue>4.8</defaultBaseValue><minValue>0</minValue></StatDef>
 <StatDef><defName>UN_ShieldEnergy</defName><label>UN shield energy</label><description>Maximum shield energy.</description><category>Basics</category><defaultBaseValue>500</defaultBaseValue><minValue>0</minValue></StatDef>
 <StatDef><defName>UN_ShieldRecharge</defName><label>UN shield recharge</label><description>Shield recharge rate.</description><category>Basics</category><defaultBaseValue>0.2</defaultBaseValue><minValue>0</minValue></StatDef>
 </Defs>

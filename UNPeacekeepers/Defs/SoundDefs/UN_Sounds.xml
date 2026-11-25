@@ -1,0 +1,1 @@
+<Defs><SoundDef><defName>UN_Peacekeeper_Fire</defName><context>MapOnly</context><subSounds><li><grains><li Class="AudioGrain_Clip"><clipPath>UN/Peacekeeper_Crack</clipPath></li></grains><volumeRange>65~75</volumeRange><pitchRange>0.94~1.06</pitchRange><distRange>8~40</distRange></li></subSounds></SoundDef></Defs>
