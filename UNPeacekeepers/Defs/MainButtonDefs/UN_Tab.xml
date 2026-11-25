@@ -1,0 +1,1 @@
+<Defs><MainButtonDef><defName>UN_OverviewTab</defName><label>UN</label><description>UN relations, authorization and prison inspections.</description><tabWindowClass>UNPeacekeepers.MainTabWindow_UN</tabWindowClass><order>95</order></MainButtonDef></Defs>

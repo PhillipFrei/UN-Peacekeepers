@@ -9,7 +9,7 @@ namespace UNPeacekeepers
     [StaticConstructorOnStartup]
     public static class Bootstrap
     {
-        static Bootstrap() { new Harmony("local.geneva.unpeacekeepers.authorization").PatchAll(); Log.Message("[UN Peacekeepers] Authorization 0.2.3 initialized."); }
+        static Bootstrap() { new Harmony("local.geneva.unpeacekeepers.authorization").PatchAll(); Log.Message("[UN Peacekeepers] Authorization 0.2.4 initialized."); }
     }
     public sealed class Authorization : GameComponent
     {
@@ -22,6 +22,7 @@ namespace UNPeacekeepers
         public Authorization(Game game) { }
         public static Authorization Instance => Current.Game?.GetComponent<Authorization>();
         public static bool Granted => Instance?.granted == true;
+        public float ProgressDays => granted ? 15f : startTick < 0 ? 0f : Math.Min(15f, Math.Max(0, Find.TickManager.TicksGame - startTick) / 60000f);
         public override void ExposeData()
         {
             Scribe_Values.Look(ref startTick, "unProbationStart", -1);
@@ -42,7 +43,7 @@ namespace UNPeacekeepers
             }
             Observe();
         }
-        private static Faction GetUN()
+        public static Faction GetUN()
         {
             var def = DefDatabase<FactionDef>.GetNamedSilentFail("UN_Peacekeepers");
             return def == null ? null : Find.FactionManager.FirstFactionOfDef(def);
