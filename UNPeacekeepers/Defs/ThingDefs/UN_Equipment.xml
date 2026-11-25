@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
   <ThingDef ParentName="ApparelMakeableBase">
-    <defName>UN_PeacekeeperArmor</defName><label>UN - Armor</label><description>Heavy spacer power armor with enhanced combat actuators and a deployable stationary shield generator.</description><techLevel>Spacer</techLevel>
+    <defName>UN_PeacekeeperArmor</defName><label>UN-Armor</label><description>Heavy spacer power armor with enhanced combat actuators and a deployable stationary shield generator.</description><techLevel>Spacer</techLevel>
     <graphicData><texPath>UN/Armor</texPath><graphicClass>Graphic_Single</graphicClass></graphicData>
     <statBases><MarketValue>6500</MarketValue><MaxHitPoints>800</MaxHitPoints><Mass>15</Mass><Flammability>0.05</Flammability><ArmorRating_Sharp>2.4</ArmorRating_Sharp><ArmorRating_Blunt>1.0</ArmorRating_Blunt><ArmorRating_Heat>1.2</ArmorRating_Heat><Insulation_Cold>140</Insulation_Cold><Insulation_Heat>24</Insulation_Heat><EquipDelay>8.5</EquipDelay><WorkToMake>75000</WorkToMake></statBases>
     <equippedStatOffsets><MoveSpeed>0.5</MoveSpeed><MeleeDamageFactor>2.0</MeleeDamageFactor><MeleeCooldownFactor>-0.5</MeleeCooldownFactor><AimingDelayFactor>-0.5</AimingDelayFactor><CarryingCapacity>75</CarryingCapacity></equippedStatOffsets>
-    <apparel><bodyPartGroups><li>Torso</li><li>Neck</li><li>Shoulders</li><li>Arms</li><li>Legs</li><li>Hands</li><li>Feet</li></bodyPartGroups><layers><li>Middle</li><li>Shell</li></layers><wornGraphicPath>UN/Armor</wornGraphicPath><tags><li>UN_Armor</li></tags><abilities><li>UN_DeployShield</li></abilities><defaultOutfitTags><li>Soldier</li></defaultOutfitTags><useDeflectMetalEffect>true</useDeflectMetalEffect></apparel>
+    <apparel><bodyPartGroups><li>Torso</li><li>Neck</li><li>Shoulders</li><li>Arms</li><li>Legs</li><li>Hands</li><li>Feet</li></bodyPartGroups><layers><li>Middle</li><li>Shell</li></layers><wornGraphicPath>Things/Pawn/Humanlike/Apparel/UNArmor/UNArmor</wornGraphicPath><tags><li>UN_Armor</li></tags><abilities><li>UN_DeployShield</li></abilities><defaultOutfitTags><li>Soldier</li></defaultOutfitTags><useDeflectMetalEffect>true</useDeflectMetalEffect></apparel>
     <costList><Plasteel>150</Plasteel><Uranium>50</Uranium><ComponentSpacer>6</ComponentSpacer></costList>
     <recipeMaker><recipeUsers Inherit="False"><li>FabricationBench</li></recipeUsers><researchPrerequisite>Fabrication</researchPrerequisite><skillRequirements><Crafting>8</Crafting></skillRequirements><unfinishedThingDef>UnfinishedTechArmor</unfinishedThingDef></recipeMaker>
     <thingCategories Inherit="False"><li>ApparelArmor</li></thingCategories>
     
   </ThingDef>
   <ThingDef ParentName="ApparelMakeableBase">
-    <defName>UN_PeacekeeperHelmet</defName><label>UN - Blue Helm</label><description>Reinforced blue combat helmet with an integrated targeting visor.</description><techLevel>Spacer</techLevel>
+    <defName>UN_PeacekeeperHelmet</defName><label>UN-Helmet</label><description>Reinforced blue combat helmet with an integrated targeting visor.</description><techLevel>Spacer</techLevel>
     <graphicData><texPath>UN/Helmet</texPath><graphicClass>Graphic_Single</graphicClass></graphicData>
     <statBases><MarketValue>1500</MarketValue><MaxHitPoints>360</MaxHitPoints><Mass>2</Mass><Flammability>0.05</Flammability><ArmorRating_Sharp>2.4</ArmorRating_Sharp><ArmorRating_Blunt>1</ArmorRating_Blunt><ArmorRating_Heat>1.2</ArmorRating_Heat><Insulation_Cold>8</Insulation_Cold><Insulation_Heat>4</Insulation_Heat><EquipDelay>3</EquipDelay><WorkToMake>26250</WorkToMake></statBases>
     <apparel><bodyPartGroups><li>FullHead</li></bodyPartGroups><layers><li>Overhead</li></layers><wornGraphicPath>UN/Helmet</wornGraphicPath><tags><li>UN_Helmet</li></tags><defaultOutfitTags><li>Soldier</li></defaultOutfitTags><useDeflectMetalEffect>true</useDeflectMetalEffect></apparel>
