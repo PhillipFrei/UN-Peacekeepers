@@ -1,8 +1,5 @@
-# UN Peacekeepers – 0.1.5 alpha
+# UN Peacekeepers – 0.2 alpha
 
-**XML source snapshot, not an installable release.** Install the complete alpha ZIP supplied separately. The PNG textures and original WAV file are not yet in this repository.
+XML/C# source snapshot. Install the separate complete texture/audio ZIP; it does not include the compiled authorization DLL. The source requires Harmony and VEF. A build workflow is included if accepted by GitHub. No in-game test yet.
 
-RimWorld 1.6, Vanilla Expanded Framework. Stationary deployable shield, 4.8 radius, 12 in-game hours, original energy setting 500 retained. Helmet +5 shooting accuracy; Peacekeeper 48 damage, 300% penetration. No in-game testing yet; custom body-size mod compatibility remains open. NPC auto-activation and UN missions are not implemented.
-
-## 0.1.5
-Display names UN-Armor and UN-Helmet. The full ZIP includes 15 revised body-specific worn sprites at Things/Pawn/Humanlike/Apparel/UNArmor/UNArmor. Binary assets are still absent here. Genetic scaling and live body-type switching require in-game testing.
+UN-Peacekeeper now uses BaseHumanMakeableGun; optional vanilla Biotech combat mechs in UN combat group. +100 goodwill for 15 continuous days unlocks the three recipes permanently in this prototype, subject to ordinary research. Reset below +100. Existing bills gated by compiled module; cancel old bills if testing without DLL. No active crime-based goodwill system yet.
