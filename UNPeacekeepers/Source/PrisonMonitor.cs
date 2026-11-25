@@ -58,7 +58,7 @@ namespace UNPeacekeepers
             var un=Authorization.GetUN();
             if(un==null || un.defeated || delta==0) return;
             int before=un.PlayerGoodwill;
-            un.TryAffectGoodwillWith(Faction.OfPlayer,delta,false,false);
+            UNContact.ApplyPrisonGoodwill(un,delta,p.LabelShortCap.ToString()+": "+reason);
             string msg="UN_PrisonResult".Translate(p.LabelShortCap,delta.ToString("+0;-0;0"),(un.PlayerGoodwill-before).ToString("+0;-0;0"),reason).ToString();
             lastEvents.Insert(0,msg);
             if(lastEvents.Count>60) lastEvents.RemoveAt(lastEvents.Count-1);
