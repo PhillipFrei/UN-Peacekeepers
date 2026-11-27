@@ -1,10 +1,10 @@
-# UN Peacekeepers 0.3.0 alpha
+# UN Peacekeepers 0.3.1 alpha
 
-Document-driven core overhaul based on main v0.2.9 (`47b3dd90`). This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
+Based on release/0.3.0-alpha (`45e8d5bf`) with only the two additional prisoner-crime categories and their rules/translations. This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
 
 ## Install
 
-Download the complete `UN_Peacekeepers_v0.3.0-alpha.zip` from GitHub Actions. Extract `UNPeacekeepers` into the game's Mods folder, replacing the previous mod folder. Keep a copy of the old mod and save. Load a COPY of your save for alpha testing. No game DLLs are shipped. Existing v0.2.9 supply orders retain their original handover and rewards; new orders use the new pool.
+Download the complete `UN_Peacekeepers_v0.3.1-alpha.zip` from GitHub Actions. Extract `UNPeacekeepers` into the game's Mods folder, replacing the previous mod folder. Keep a copy of the old mod and save. Load a COPY of your save for alpha testing. No game DLLs are shipped. Existing v0.2.9 supply orders retain their original handover and rewards; new orders use the new pool.
 
 ## Core implementation
 
@@ -36,7 +36,7 @@ Existing prison penalties/recovery stay unchanged. New reliable event hooks cove
 
 Own pollution is tracked only through proven source contexts: owned machine emission, traceable waste decay and player-instigated explosion cell processing. Previously polluted cells and unassigned/mod-bypassed effects are not attributed retroactively. Cleaning removes ownership. One weighted periodic penalty covers loaded home maps every three days. Explicit caravan waste abandonment accumulates in groups of five, preserving the remainder. Safe storage/normal disposal is not charged.
 
-Humans experiments and negligent prisoner death are intentionally omitted at the user's request. Unknown mod events are conservatively ignored. The event hooks are not a guarantee of coverage for every modded weapon, surgery, recruitment mechanism or attack source.
+Prisoner experiments and proven fatal starvation are added in 0.3.1. Completed player-owned gene extraction, completed softscan, destructive ripscan (including fatal cancellation), and configured prisoner surgeries such as InstallMindscrew cost 20 points. Only a confirmed actual death from the explicitly lethal Malnutrition culprit, without a damage event, costs 30. Ordinary diseases, blood loss, regeneration coma and deathrest never automatically count as negligent deaths. The optional XML rule list allows exact RecipeDef or direct-target AbilityDef names and scanner ThingDefs to be added; unconfigured actions are not treated as experiments. A configured surgery that actually enters its worker is counted even if surgery fails; the overlapping generic surgery or harvest penalty is suppressed for that recipe. Unknown or ambiguous causes are not charged. Existing penalties, journal, recovery and ultimatum logic are reused. The new hooks are compile-tested but not exercised in-game. Unknown mod events are conservatively ignored. The event hooks are not a guarantee of coverage for every modded weapon, surgery, recruitment mechanism or attack source.
 
 ## Ultimatum
 

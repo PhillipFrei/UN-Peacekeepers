@@ -133,8 +133,9 @@ namespace UNPeacekeepers
     [HarmonyPatch(typeof(RecipeWorker), "ReportViolation")]
     internal static class SurgeryViolation
     {
-        static void Postfix(Pawn __0,Pawn __1)
+        static void Postfix(RecipeWorker __instance,Pawn __0,Pawn __1)
         {
+            if(UNPrisonCrimeRules.FindRule("Recipe",__instance.recipe?.defName)!=null)return;
             if(PrisonMonitor.Eligible(__0) && __1?.Faction==Faction.OfPlayer)
                 PrisonMonitor.Instance?.Record(__0,-15,"UN_SurgeryViolation".Translate().ToString());
         }

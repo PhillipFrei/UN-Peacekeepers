@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- To extend: create another UNCrimeRuleDef with a unique defName, one of
+       Recipe / Ability / GeneExtraction / SoftScan / RipScan / FatalHediff,
+       and an exact targetDefName. Optional missing names are ignored. -->
+  <UNPeacekeepers.UNCrimeRuleDef MayRequire="Ludeon.RimWorld.Biotech"><defName>UN_CrimeGeneExtraction</defName><eventKind>GeneExtraction</eventKind><targetDefName>GeneExtractor</targetDefName><points>20</points></UNPeacekeepers.UNCrimeRuleDef>
+  <UNPeacekeepers.UNCrimeRuleDef MayRequire="Ludeon.RimWorld.Biotech"><defName>UN_CrimeSoftScan</defName><eventKind>SoftScan</eventKind><targetDefName>SubcoreSoftscanner</targetDefName><points>20</points></UNPeacekeepers.UNCrimeRuleDef>
+  <UNPeacekeepers.UNCrimeRuleDef MayRequire="Ludeon.RimWorld.Biotech"><defName>UN_CrimeRipScan</defName><eventKind>RipScan</eventKind><targetDefName>SubcoreRipscanner</targetDefName><points>20</points></UNPeacekeepers.UNCrimeRuleDef>
+  <UNPeacekeepers.UNCrimeRuleDef MayRequire="Ludeon.RimWorld.Royalty"><defName>UN_CrimeMindscrew</defName><eventKind>Recipe</eventKind><targetDefName>InstallMindscrew</targetDefName><points>20</points></UNPeacekeepers.UNCrimeRuleDef>
+  <UNPeacekeepers.UNCrimeRuleDef><defName>UN_CrimeStarvation</defName><eventKind>FatalHediff</eventKind><targetDefName>Malnutrition</targetDefName><points>30</points></UNPeacekeepers.UNCrimeRuleDef>
+</Defs>

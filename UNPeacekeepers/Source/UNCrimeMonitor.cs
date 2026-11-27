@@ -152,8 +152,8 @@ namespace UNPeacekeepers
         [HarmonyPatch(typeof(Recipe_RemoveBodyPart),nameof(Recipe_RemoveBodyPart.ApplyOnPawn))]
         static class Harvest
         {
-            static void Prefix(Pawn pawn,BodyPartRecord part,Pawn billDoer,out bool __state)
-            {__state=billDoer?.Faction==Faction.OfPlayer&&pawn.IsPrisonerOfColony&&HealthUtility.PartRemovalIntent(pawn,part)==BodyPartRemovalIntent.Harvest&&!pawn.health.hediffSet.PartIsMissing(part);}
+            static void Prefix(Recipe_RemoveBodyPart __instance,Pawn pawn,BodyPartRecord part,Pawn billDoer,out bool __state)
+            {__state=UNPrisonCrimeRules.FindRule("Recipe",__instance.recipe?.defName)==null&&billDoer?.Faction==Faction.OfPlayer&&pawn.IsPrisonerOfColony&&HealthUtility.PartRemovalIntent(pawn,part)==BodyPartRemovalIntent.Harvest&&!pawn.health.hediffSet.PartIsMissing(part);}
             static void Postfix(Pawn pawn,BodyPartRecord part,bool __state)
             {if(__state&&pawn.health.hediffSet.PartIsMissing(part))RecordCrime(part.depth==BodyPartDepth.Inside?20:15,(part.depth==BodyPartDepth.Inside?"UNCrime_Organ":"UNCrime_Mutilation").Translate(pawn.LabelShortCap),"harvest:"+pawn.ThingID+":"+part.Index+":"+Find.TickManager.TicksGame);}
         }
