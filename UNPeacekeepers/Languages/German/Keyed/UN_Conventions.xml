@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UNCrime_Abuse>Misshandlung: {0}</UNCrime_Abuse>
+  <UNCrime_Aggression>Unprovozierter Angriff auf {0}</UNCrime_Aggression>
+  <UNCrime_Chemical>Einsatz toxischer Waffen</UNCrime_Chemical>
+  <UNCrime_Civilian>Vorsätzliche Tötung eines Zivilisten: {0}</UNCrime_Civilian>
+  <UNCrime_Downed>Tötung eines bereits kampfunfähigen Gegners: {0}</UNCrime_Downed>
+  <UNCrime_Equipment>UN-Ausrüstung ohne Freigabe: {0}</UNCrime_Equipment>
+  <UNCrime_Execution>Hinrichtung: {0}</UNCrime_Execution>
+  <UNCrime_Mutilation>Vorsätzliche Verstümmelung: {0}</UNCrime_Mutilation>
+  <UNCrime_Organ>Organentnahme: {0}</UNCrime_Organ>
+  <UNCrime_Recruit>Zwangsrekrutierung: {0}</UNCrime_Recruit>
+  <UNCrime_Settlement>Unprovozierter Angriff auf eine friedliche Siedlung: {0}</UNCrime_Settlement>
+  <UNCrime_Slavery>Versklavung: {0}</UNCrime_Slavery>
+  <UNCrime_UNAttack>Angriff auf UN-Hilfskräfte: {0}</UNCrime_UNAttack>
+  <UNCrime_PollutionAssessment>Eigene verbleibende Verschmutzung: {0}</UNCrime_PollutionAssessment>
+  <UNCrime_PollutionStatus>{0} eigene verschmutzte Felder ({1}); {2} Strafpunkte je Umweltprüfung. Giftmüllrest: {3}/5 Säcke.</UNCrime_PollutionStatus>
+  <UNCrime_WasteDump>Giftmüll abgeladen: {0} Säcke</UNCrime_WasteDump>
+  <UNCrime_WeaponPollution>Eigenes Waffenfeld neu verschmutzt</UNCrime_WeaponPollution>
+  <UNCrime_ArrestDeployed>UN-Festnahmetrupp für {0} eingetroffen.</UNCrime_ArrestDeployed>
+  <UNCrime_ArrestPending>Festnahme ausstehend: {0}. Benannter Anführer muss auf einer Heimatkarte erreichbar sein.</UNCrime_ArrestPending>
+  <UNCrime_ArrestTitle>UN-Festnahmeintervention</UNCrime_ArrestTitle>
+  <UNCrime_LeaderLocked>Der Anführer eines laufenden Verfahrens kann nicht ausgetauscht werden.</UNCrime_LeaderLocked>
+  <UNCrime_LeaderStatus>Anführer: {0} · unverbrauchte Strafpunkte in 10 Tagen: {1}/100</UNCrime_LeaderStatus>
+  <UNCrime_NoCandidate>Kein geeigneter Kolonist auf einer geladenen Karte</UNCrime_NoCandidate>
+  <UNCrime_NoLeader>Noch nicht ausgewählt</UNCrime_NoLeader>
+  <UNCrime_UltimatumDelivered>Anführer lebend an die UN ausgeliefert: {0}</UNCrime_UltimatumDelivered>
+  <UNCrime_UltimatumRefused>UN-Ultimatum verweigert oder abgelaufen</UNCrime_UltimatumRefused>
+  <UNCrime_UltimatumStatus>UN-Ultimatum für {0} · Frist noch {1:0.00} Tage</UNCrime_UltimatumStatus>
+  <UNCrime_UltimatumTerms>Mindestens 100 Verbrechensstrafpunkte innerhalb von zehn Tagen. Wähle in der UN-Zentrale deinen Anführer und liefere ihn innerhalb von drei Tagen lebend mit dem UN-Shuttle aus (+20 UN-Gunst). Die Frist läuft auch ohne Auswahl. Bei Ablauf: −20 und gezielte Festnahmeintervention.</UNCrime_UltimatumTerms>
+  <UNCrime_UltimatumTitle>UN-Ultimatum zur Auslieferung</UNCrime_UltimatumTitle>
+  <UNCrime_Rules>Zusätzliche Konventionsregeln: neutrale Aggression −50, verbündete/friedliche Siedlung −75, UN-Hilfskräfte −50; Zivilistentötung −30, Hinrichtung/kampfunfähiger Gegner −25; toxische Waffen −30. Organentnahme −20, Verstümmelung −15, Misshandlung −5, Zwangsrekrutierung −5, Versklavung −15, UN-Ausrüstung ohne Freigabe −10. Nur belastbar zugeordnete Ereignisse werden erfasst. Umweltprüfung alle 3 Tage: eigener Anteil &gt;0 bis &lt;25 % −10, 25 bis &lt;75 % −20, ab75 % −50; je 5 abgeladene Säcke −1, je neuem eigenen Waffenfeld −1. Ultimatum nach 100 Strafpunkten in 10 Tagen; 3 Tage Auslieferungsfrist, +20 Erfolg/−20 Ablauf. Fehlende oder unzuverlässige Mod-Ereignisse sind nicht automatisch abgedeckt.</UNCrime_Rules>
+</LanguageData>

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs><QuestScriptDef><defName>UN_Mission_Contract</defName><root Class="QuestNode_Sequence"/><randomlySelectable>false</randomlySelectable><rootSelectionWeight>0</rootSelectionWeight><endOnColonyMove>false</endOnColonyMove></QuestScriptDef></Defs>

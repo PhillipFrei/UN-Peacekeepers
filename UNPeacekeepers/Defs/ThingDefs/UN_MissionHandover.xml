@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThingDef ParentName="BuildingBase">
+    <defName>UN_MissionHandover</defName><label>UN handover point</label>
+    <description>Deliver requested supplies beside this marker or review this site's objectives. Goods must be transported to the operation site.</description>
+    <thingClass>Building</thingClass><category>Building</category>
+    <graphicData><texPath>UN/Icon</texPath><graphicClass>Graphic_Single</graphicClass><drawSize>(1.5,1.5)</drawSize></graphicData>
+    <altitudeLayer>Building</altitudeLayer><passability>PassThroughOnly</passability><selectable>true</selectable>
+    <size>(1,1)</size><rotatable>false</rotatable>
+    <statBases><MaxHitPoints>300</MaxHitPoints><Flammability>0</Flammability></statBases>
+    <comps><li Class="UNPeacekeepers.CompProperties_UNHandover"/></comps>
+  </ThingDef>
+</Defs>

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs><DutyDef><defName>UN_TargetedCapture</defName><alwaysShowWeapon>true</alwaysShowWeapon><thinkNode Class="UNPeacekeepers.JobGiver_UNCapture"/></DutyDef></Defs>

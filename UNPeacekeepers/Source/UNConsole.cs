@@ -12,10 +12,15 @@ namespace UNPeacekeepers
         public override IEnumerable<Gizmo> CompGetGizmosExtra()
         {
             if(!(parent is Building_CommsConsole) || parent.Faction!=Faction.OfPlayer)yield break;
-            // Local reports/settings need neither a negotiator nor electricity; contact remains a pawn job.
-            yield return new Command_Action{groupable=false,defaultLabel="UN_PrisonReport".Translate(),defaultDesc="UN_ConsoleLocal".Translate(),icon=TexButton.Info,action=()=>Find.WindowStack.Add(new MainTabWindow_UN())};
-            yield return new Command_Action{groupable=false,defaultLabel="UN_C_Report".Translate(),defaultDesc="UN_ConsoleLocal".Translate(),icon=TexButton.Info,action=()=>Find.WindowStack.Add(new Dialog_UNJournal())};
-            yield return new Command_Action{groupable=false,defaultLabel="UN_DirectSettings".Translate(),defaultDesc="UN_ConsoleLocal".Translate(),icon=TexButton.Info,action=()=>Find.WindowStack.Add(new Dialog_UNSettings())};
+            // This local dashboard is intentionally independent of power and negotiator jobs.
+            yield return new Command_Action
+            {
+                groupable=true,
+                defaultLabel="UN_Central_Title".Translate(),
+                defaultDesc="UN_Central_ConsoleDescription".Translate(),
+                icon=TexButton.Info,
+                action=UNCentralWindow.Open
+            };
         }
     }
     public sealed class Dialog_UNSettings:Window

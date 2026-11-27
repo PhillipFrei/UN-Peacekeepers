@@ -41,6 +41,7 @@ namespace UNPeacekeepers
             if(before==after && prisonContext==null)return;
             Add("UN_C_Entry".Translate((after-before).ToString("+0;-0;0"),before,after,reason).ToString());
         }
+        public void LogEvent(string text)=>Add(text);
         private void Add(string text)
         {
             journal.Insert(0,"UN_C_Dated".Translate((Find.TickManager.TicksGame/(float)Day).ToString("0.0"),text).ToString());
@@ -118,6 +119,7 @@ namespace UNPeacekeepers
             }
             if(lastRaid>=0)nextRaid=lastRaid+Interval(g);
             if(now<nextRaid)return;
+            if(UNUltimatum.Instance?.CaptureOperationActive==true)return;
             if(!un.HostileTo(Faction.OfPlayer))return;
             var map=RaidTarget();
             if(map==null)return;
@@ -203,15 +205,15 @@ namespace UNPeacekeepers
                 if(!IsUN(f)||__result==null||comp==null)return;
                 // Replace vanilla gift/trader/quest options for this faction only.
                 __result.options.Clear();
-                __result.options.Add(new DiaOption("UN_C_Report".Translate()){resolveTree=true,action=()=>Find.WindowStack.Add(new Dialog_UNJournal())});
-                __result.options.Add(new DiaOption("UN_PrisonReport".Translate()){resolveTree=true,action=()=>Find.WindowStack.Add(new MainTabWindow_UN())});
-                __result.options.Add(new DiaOption("UN_DirectSettings".Translate()){resolveTree=true,action=()=>Find.WindowStack.Add(new Dialog_UNSettings())});
+                __result.options.Add(new DiaOption("UN_Central_Title".Translate()){resolveTree=true,action=()=>UNCentralWindow.Open()});
                 var aid=new DiaOption("UN_C_Aid".Translate()){resolveTree=true,action=()=>comp.RequestAid(f,pawn.Map)};
                 string block=comp.AidBlock(f,pawn.Map);
                 if(block!=null)aid.Disable(block);
                 __result.options.Add(aid);
-                __result.options.Add(AssignmentOption(pawn,f,false));
-                __result.options.Add(AssignmentOption(pawn,f,true));
+                __result.options.Add(new DiaOption("UNM_Offers".Translate()){resolveTree=true,action=()=>UNMissionManager.Open(pawn)});
+                // Retain only already accepted 0.2.9 orders; never generate legacy offers.
+                var legacy=UNSupplyOrders.Active;
+                if(legacy!=null)__result.options.Add(UNSupplyOrders.Option(pawn,f,legacy.advanced));
                 __result.options.Add(new DiaOption("Disconnect".Translate()){resolveTree=true});
             }
         }

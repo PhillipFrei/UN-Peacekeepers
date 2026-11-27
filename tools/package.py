@@ -14,7 +14,7 @@ for lang in ['German','English']:
     assert len(keys)==len(set(keys)), 'duplicate translation keys'
 dll=mod/'Assemblies/UNPeacekeepers.dll'
 assert dll.read_bytes()[:2]==b'MZ' and dll.stat().st_size>10000
-out=root/'UN_Peacekeepers_v0.2.9.zip'
+out=root/'UN_Peacekeepers_v0.3.0-alpha.zip'
 with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
     for p in sorted(mod.rglob('*')):
         if p.is_file() and 'Source' not in p.relative_to(mod).parts and p.suffix not in ('.pdb',):

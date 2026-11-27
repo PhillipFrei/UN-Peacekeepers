@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UNM_Reward>Reward: {0} silver, +{1} UN goodwill and +{1} goodwill with {2} (subject to their diplomatic restrictions). Difficulty: {3}%. UN goodwill above +100: 100 silver per point. Paid only on complete success.</UNM_Reward>
+  <UNM_Inactive>Ten days without accepting a new UN assignment</UNM_Inactive>
+  <UNM_Full>Five UN missions are already active.</UNM_Full>
+  <UNM_RecipientGone>The supported faction is no longer available.</UNM_RecipientGone>
+  <UNM_NeedPawn>Accept with a colonist through communications or the quest log.</UNM_NeedPawn>
+  <UNM_Title>{0} — {1}</UNM_Title>
+  <UNM_Tier0>Ordinary</UNM_Tier0>
+  <UNM_Tier1>Advanced</UNM_Tier1>
+  <UNM_Tier2>Elite</UNM_Tier2>
+  <UNM_Kind0>Humanitarian delivery</UNM_Kind0>
+  <UNM_Kind1>Medical assistance</UNM_Kind1>
+  <UNM_Kind2>Evacuation</UNM_Kind2>
+  <UNM_Kind3>Prisoner rescue</UNM_Kind3>
+  <UNM_Kind4>Humanitarian protection</UNM_Kind4>
+  <UNM_Kind5>Military intervention</UNM_Kind5>
+  <UNM_Kind6>War criminal arrest</UNM_Kind6>
+  <UNM_Accepted>Assignment accepted: {0}</UNM_Accepted>
+  <UNM_Failed>Mission failed: {0}</UNM_Failed>
+  <UNM_Payment>{0}: {1} reward silver + {2} silver for excess UN goodwill. Delivery pending.</UNM_Payment>
+  <UNM_PaymentDelivered>Silver for “{0}” delivered beside a colonist on a home map.</UNM_PaymentDelivered>
+  <UNM_Pool>UN mission pool · {0}/5 active · up to 10 offers</UNM_Pool>
+  <UNM_Offers>Mission offers</UNM_Offers>
+  <UNM_Empty>No offers currently available. Accepted slots refill after three days. New offers need a suitable home map, faction and valid destination.</UNM_Empty>
+  <UNM_Cancel>Cancel assignment (−5 UN goodwill)</UNM_Cancel>
+  <UNM_CancelConfirm>Cancel this accepted assignment? It will fail (−5 UN goodwill); delivered goods are not returned.</UNM_CancelConfirm>
+  <UNM_Difficulty>Mission difficulty: {0}%</UNM_Difficulty>
+  <UNM_DifficultyInfo>Scales supplies, enemy budget and regular silver. Goodwill and overflow conversion stay fixed. Changed terms are displayed before acceptance; accepted missions keep their values. Elite goodwill +30 is a provisional balance default.</UNM_DifficultyInfo>
+  <UNM_Supplement>Optional follow-up: {0}</UNM_Supplement>
+  <UNM_Optional>Additional assistance is available for 3 days. Ignoring it has no penalty. Acceptance uses no normal mission slot and resets the inactivity clock. Once accepted, its own deadline, full tier reward and −5 failure penalty apply. The main mission outcome remains unchanged.</UNM_Optional>
+  <UNM_TermsChanged>Difficulty changed. Displayed quantities and rewards have been updated; review them before accepting.</UNM_TermsChanged>
+</LanguageData>

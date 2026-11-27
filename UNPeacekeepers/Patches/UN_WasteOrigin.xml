@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch><Operation Class="PatchOperationFindMod"><mods><li>Biotech</li></mods><match Class="PatchOperationAdd"><xpath>Defs/ThingDef[defName="Wastepack"]/comps</xpath><value><li Class="UNPeacekeepers.CompProperties_UNWasteOrigin"/></value></match></Operation></Patch>

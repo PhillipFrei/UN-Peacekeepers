@@ -47,6 +47,38 @@ class Program
             Check(!delivery.TryClaim(required),"Reward guard survives reload");
         }
         Check(!UNSupplyProgress.Expired(599999) && UNSupplyProgress.Expired(600000),"Deadline boundary");
-        Console.WriteLine("All recovery, housing, assignment, intervention and supply lifecycle assertions passed.");
+        for(int goodwill=-100;goodwill<=100;goodwill++)
+        {
+            int[] counts=new int[3];
+            for(int slot=0;slot<10;slot++){int tier=UNMissionPolicy.SlotTier(slot,goodwill);if(tier>=0)counts[tier]++;}
+            Check(counts[0]==(goodwill<0?0:goodwill<50?10:5),"Ordinary pool count at "+goodwill);
+            Check(counts[1]==(goodwill<50?0:goodwill<80?5:4),"Advanced pool count at "+goodwill);
+            Check(counts[2]==(goodwill<80?0:1),"Elite pool count at "+goodwill);
+            int penalty=UNMissionPolicy.InactivityPenalty(goodwill);
+            Check(penalty<=0&&penalty>=-10,"Inactivity magnitude");
+            Check(goodwill<=50?penalty==0:goodwill+penalty>=50,"Inactivity floor");
+        }
+        Check(UNMissionPolicy.ExcessSilver(95,20)==1500,"+95 plus 20 pays 1500 overflow");
+        Check(UNMissionPolicy.ExcessSilver(100,10)+UNMissionPolicy.ScaledSilver(0,1)==2500,"Ordinary at cap");
+        Check(UNMissionPolicy.ExcessSilver(100,20)+UNMissionPolicy.ScaledSilver(1,1)==7000,"Advanced at cap");
+        Check(UNMissionPolicy.ExcessSilver(100,30)+UNMissionPolicy.ScaledSilver(2,1)==13000,"Elite at cap");
+        Check(UNMissionPolicy.ScaledSilver(1,5)==25000&&UNMissionPolicy.ExcessSilver(95,20)==1500,"Difficulty scales regular silver only");
+        // Failure after merging some silver must leave only the undelivered remainder.
+        int pending=1500, physical=0;
+        foreach(int actual in new[]{120,380}){pending=UNMissionPolicy.RemainingAfterPlacement(pending,actual);physical+=actual;}
+        Check(pending==1000&&physical==500,"Partly failed placement ledger");
+        int restoredPending=pending;
+        foreach(int actual in new[]{500,500}){restoredPending=UNMissionPolicy.RemainingAfterPlacement(restoredPending,actual);physical+=actual;}
+        Check(restoredPending==0&&physical==1500,"Reload retries only unpaid silver");
+        Check(UNCrimePolicy.PollutionPenalty(0,100)==0,"Unattributed and clean cells cause no periodic penalty");
+        Check(UNCrimePolicy.PollutionPenalty(1,100)==10&&UNCrimePolicy.PollutionPenalty(24,100)==10,"Low pollution tier");
+        Check(UNCrimePolicy.PollutionPenalty(25,100)==20&&UNCrimePolicy.PollutionPenalty(74,100)==20,"Middle pollution tier");
+        Check(UNCrimePolicy.PollutionPenalty(75,100)==50&&UNCrimePolicy.PollutionPenalty(100,100)==50,"High pollution tier");
+        int wasteRemainder=0;
+        Check(UNCrimePolicy.WastePenalty(ref wasteRemainder,4)==0&&wasteRemainder==4,"First waste remainder");
+        Check(UNCrimePolicy.WastePenalty(ref wasteRemainder,4)==1&&wasteRemainder==3,"4 plus 4 waste packs");
+        Check(UNCrimePolicy.InWindow(600000,1)&&!UNCrimePolicy.InWindow(600000,0),"Rolling ten-day crime boundary");
+        Check(UNCrimePolicy.Aggression(true,true,false)==75,"Aggression uses highest tier once");
+        Console.WriteLine("All prison, intervention, supply, mission pool, silver, pollution and crime-window assertions passed.");
     }
 }

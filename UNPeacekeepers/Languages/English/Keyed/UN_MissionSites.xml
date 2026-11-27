@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UNMS_NoSite>No suitable unreserved destination is available.</UNMS_NoSite>
+  <UNMS_NoEnemy>No suitable existing conflict is available.</UNMS_NoEnemy>
+  <UNMS_Deliver>Deliver UN supplies</UNMS_Deliver>
+  <UNMS_Review>Review UN objectives</UNMS_Review>
+  <UNMS_Kind>Assignment</UNMS_Kind>
+  <UNMS_Destination>Destination: {0} (tile {1})</UNMS_Destination>
+  <UNMS_Camp>temporary UN camp</UNMS_Camp>
+  <UNMS_Faction>Supported faction: {0}</UNMS_Faction>
+  <UNMS_People>Required people: {0}</UNMS_People>
+  <UNMS_Time>Deadline: {0} days from acceptance.</UNMS_Time>
+  <UNMS_Enemy>Opposing faction: {0}; frozen combat budget: {1} points.</UNMS_Enemy>
+  <UNMS_Peaceful>No combat is scheduled.</UNMS_Peaceful>
+  <UNMS_Remaining>Time remaining: {0:0.1} days.</UNMS_Remaining>
+  <UNMS_Partial>Partial delivery saved. All requested goods are required before any reward is paid.</UNMS_Partial>
+  <UNMS_TreatmentIncomplete>Every assigned patient must recover from their acute injuries; the required roofed medical beds must be at 16–30°C.</UNMS_TreatmentIncomplete>
+  <UNMS_EnemiesRemain>Defeat or incapacitate the camp guards before releasing the assigned prisoners.</UNMS_EnemiesRemain>
+  <UNMS_ReturnHome>These exact people are now under temporary player control. Bring all of them to your home map; a UN shuttle collects them after bleeding stops.</UNMS_ReturnHome>
+  <UNMS_Stale>The destination or exact target is no longer available. This offer cannot be accepted.</UNMS_Stale>
+  <UNMS_UnsafeCleanup>This site still contains player people, cargo or required targets. Clear it safely before removal.</UNMS_UnsafeCleanup>
+  <UNMS_RemoveSite>Close cleared UN site</UNMS_RemoveSite>
+  <UNMS_MoveMarker>Bring an able colonist within 8 cells of the handover marker.</UNMS_MoveMarker>
+  <UNMS_Started>This operation has already started.</UNMS_Started>
+  <UNMS_InvalidTarget>The exact target is unavailable; no duplicate has been created.</UNMS_InvalidTarget>
+  <UNMS_Hospital>Medical beds required: {0}; all patients must recover from acute injuries.</UNMS_Hospital>
+  <UNMS_NameTargets>Assigned people: {0}.</UNMS_NameTargets>
+  <UNMS_Scope>Temporary sites and existing settlement deliveries are supported. Existing base assault/CBF and vehicle-framework integrations require separate compatibility tests.</UNMS_Scope>
+  <UNMS_Camp0>UN supply depot</UNMS_Camp0>
+  <UNMS_Camp1>UN field hospital</UNMS_Camp1>
+  <UNMS_Camp2>UN refugee camp</UNMS_Camp2>
+  <UNMS_Camp3>UN military post</UNMS_Camp3>
+  <UNMS_Claimed>This site or target is already assigned to another active offer.</UNMS_Claimed>
+  <UNMS_Kind0>Humanitarian delivery</UNMS_Kind0>
+  <UNMS_Kind1>Medical mission</UNMS_Kind1>
+  <UNMS_Kind2>Evacuation</UNMS_Kind2>
+  <UNMS_Kind3>Prisoner rescue</UNMS_Kind3>
+  <UNMS_Kind4>Humanitarian protection</UNMS_Kind4>
+  <UNMS_Kind5>Military intervention</UNMS_Kind5>
+  <UNMS_Kind6>Elite arrest</UNMS_Kind6>
+  <UNMS_Goal0>Transport every listed item to this destination. At a settlement, select the caravan and deliver; at a camp, unload goods within 8 cells of the handover marker and review the objective. Multiple trips are allowed.</UNMS_Goal0>
+  <UNMS_Goal1>Treat every assigned patient until acute non-permanent injuries have healed. Provide 3 (ordinary) or 6 (advanced) roofed medical beds at 16–30°C; then review the handover point.</UNMS_Goal1>
+  <UNMS_Goal2>At the site, use the handover point to take temporary responsibility for every assigned civilian. Physically transport them to the stated home map, stop bleeding and board all of them onto the UN pickup shuttle.</UNMS_Goal2>
+  <UNMS_Goal3>Free every assigned prisoner after the guards are defeated or incapacitated. Transport the exact people home alive, stabilize them, and hand all over to the UN shuttle.</UNMS_Goal3>
+  <UNMS_Goal4>Keep every assigned civilian and the marked handover point alive for the entire stated defense period, then defeat/incapacitate all assigned attackers.</UNMS_Goal4>
+  <UNMS_Goal5>Protect all assigned civilians and the marked handover point through the defense period and repel every assigned attacker. The supported faction and UN provide local defenders.</UNMS_Goal5>
+  <UNMS_Goal6>Capture the exact named living faction leader, keep them alive, transport them home, stop bleeding and board the UN pickup shuttle. Killing the target fails the mission.</UNMS_Goal6>
+</LanguageData>

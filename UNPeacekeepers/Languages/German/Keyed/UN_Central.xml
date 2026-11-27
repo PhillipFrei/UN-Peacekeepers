@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UN_Central_Title>UN-Zentrale</UN_Central_Title>
+  <UN_Central_ConsoleDescription>Lokale UN-Übersicht öffnen. Ohne Strom und ohne bedienenden Kolonisten. Einstellungen findest du unter Optionen → Mod-Einstellungen → UN Peacekeepers.</UN_Central_ConsoleDescription>
+  <UN_Central_Subtitle>Vereinte Nationen · Kolonieüberwachung</UN_Central_Subtitle>
+  <UN_Central_Overview>Übersicht</UN_Central_Overview>
+  <UN_Central_Prison>Gefängnis</UN_Central_Prison>
+  <UN_Central_History>Verlauf</UN_Central_History>
+  <UN_Central_Rules>Regelwerk</UN_Central_Rules>
+  <UN_Central_Goodwill>Aktuelle UN-Gunst</UN_Central_Goodwill>
+  <UN_Central_Action>Aktueller Handlungsbedarf</UN_Central_Action>
+  <UN_Central_MixedAction>Geschlechtertrennung nicht eingehalten</UN_Central_MixedAction>
+  <UN_Central_PrisonAction>Negative Zustände bei {0} Gefangenen</UN_Central_PrisonAction>
+  <UN_Central_NoPrisonAction>Aktuell keine negativen Gefängniszustände.</UN_Central_NoPrisonAction>
+  <UN_Central_Next>Nächste Bewertung</UN_Central_Next>
+  <UN_Central_Days>{0} Tage</UN_Central_Days>
+  <UN_Central_Forecast>Erwartete Änderung bei unverändertem Zustand</UN_Central_Forecast>
+  <UN_Central_ForecastNote>Momentaufnahme der Gefängnisbewertung unter Berücksichtigung bestehender Schonfristen. Neue Verstöße, Aufnahme oder Abreise von Gefangenen können das Ergebnis ändern.</UN_Central_ForecastNote>
+  <UN_Central_Intervention>Militärische Intervention</UN_Central_Intervention>
+  <UN_Central_Access>Berechtigungen</UN_Central_Access>
+  <UN_Central_Alliance>Bündnis</UN_Central_Alliance>
+  <UN_Central_Elite>Elite-Aufträge</UN_Central_Elite>
+  <UN_Central_Manufacturing>Herstellung von UN-Ausrüstung</UN_Central_Manufacturing>
+  <UN_Central_15Days>15 Tage</UN_Central_15Days>
+  <UN_Central_Permanent>Herstellungsfreigabe dauerhaft erteilt.</UN_Central_Permanent>
+  <UN_Central_ActiveMissions>Aktive UN-Missionen</UN_Central_ActiveMissions>
+  <UN_Central_NoMissions>Keine laufende UN-Mission.</UN_Central_NoMissions>
+  <UN_Central_MissionPool>Missionsangebote ansehen</UN_Central_MissionPool>
+  <UN_Central_StatusIntervention>Militärische Intervention</UN_Central_StatusIntervention>
+  <UN_Central_StatusProbation>Bewährungsphase</UN_Central_StatusProbation>
+  <UN_Central_StatusCooperation>Zusammenarbeit möglich</UN_Central_StatusCooperation>
+  <UN_Central_StatusTrusted>Verlässlicher Partner</UN_Central_StatusTrusted>
+  <UN_Central_StatusPartner>Enger UN-Partner</UN_Central_StatusPartner>
+  <UN_Central_From>Ab {0}</UN_Central_From>
+  <UN_Central_NextIndividual>Nächste mögliche Bewertung</UN_Central_NextIndividual>
+  <UN_Central_Health>Gesundheit</UN_Central_Health>
+  <UN_Central_Food>Nahrung</UN_Central_Food>
+  <UN_Central_Bed>Unterbringung: {0}</UN_Central_Bed>
+  <UN_Central_NoBed>kein zugewiesenes Bett</UN_Central_NoBed>
+  <UN_Central_ActivityRules>INAKTIVITÄT\n\nZehn Tage ohne Annahme eines neuen UN-Auftrags: −10 Gunst, höchstens bis +50. Annahme setzt den Zeitraum zurück; Abschluss oder Funkkontakt nicht. Bei +50 oder weniger kein Abzug. Migration und neue Partien beginnen mit einem vollen Zeitraum.</UN_Central_ActivityRules>
+  <UN_Central_AccessRules>ZUGANGSSCHWELLEN\nGunst|Berechtigung\n0|Gewöhnliche UN-Aufträge\n+50|Fortgeschrittene UN-Aufträge\n+75 und Bündnis|Verstärkung bei erfüllten Einsatzbedingungen; unveränderte Abklingzeit von drei Tagen, kein eigener Gunstpreis\n+80|Elite-Aufträge\n+100 für 15 ununterbrochene Tage|Dauerhafte Herstellungsfreigabe für UN-Ausrüstung. Laufende Bewährung endet bei Gunst unter +100.\n−50 oder schlechter|Militärische Interventionen gegen die Kolonie</UN_Central_AccessRules>
+  <UN_Central_InterventionRules>MILITÄRISCHE ESKALATION\nGunst|Stärke|Intervall\n−50|×1,5|12 Tage\n−65|×2|9 Tage\n−80|×3|6 Tage\n−90|×4|4 Tage\n−100|×5|3 Tage\n\nZwischenwerte werden stufenlos berechnet. Erste Intervention nach einem Spieltag; Folgeangriffe ab dem letzten erfolgreichen Raid. Über −50 beginnen keine neuen Interventionen. Tatsächliche Storyteller-Punkte werden mit Gunstfaktor und UN-Angriffsstärke multipliziert.</UN_Central_InterventionRules>
+  <UN_Central_Leadership>Kolonieführung</UN_Central_Leadership>
+  <UN_Central_SelectLeader>Eigenen Fraktionsanführer wählen</UN_Central_SelectLeader>
+  <UN_Central_InactivityDue>Nächster Inaktivitätsabzug ohne neue Auftragsannahme</UN_Central_InactivityDue>
+  <UN_Central_Environment>Umwelt – gesamte Kolonie</UN_Central_Environment>
+  <UN_Central_EnvironmentAction>Eigene Umweltbelastung: nächster separater Umweltabzug</UN_Central_EnvironmentAction>
+  <UN_Central_NextEnvironment>Nächste separate Umweltbewertung</UN_Central_NextEnvironment>
+  <UN_Central_EnvironmentNote>Nur nachweislich eigene, weiterhin verschmutzte Felder auf eigenen Koloniekarten. Vorverschmutzung und unbekannte Quellen werden nicht zugeordnet. Dieser globale Prüfpunkt wird unabhängig von einzelnen Gefangenen bewertet.</UN_Central_EnvironmentNote>
+</LanguageData>

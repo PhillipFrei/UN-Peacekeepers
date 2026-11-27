@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UNCrime_Abuse>Abuse: {0}</UNCrime_Abuse>
+  <UNCrime_Aggression>Unprovoked attack on {0}</UNCrime_Aggression>
+  <UNCrime_Chemical>Use of toxic weapons</UNCrime_Chemical>
+  <UNCrime_Civilian>Deliberate killing of a civilian: {0}</UNCrime_Civilian>
+  <UNCrime_Downed>Killing an already incapacitated opponent: {0}</UNCrime_Downed>
+  <UNCrime_Equipment>Unauthorized UN equipment: {0}</UNCrime_Equipment>
+  <UNCrime_Execution>Execution: {0}</UNCrime_Execution>
+  <UNCrime_Mutilation>Deliberate mutilation: {0}</UNCrime_Mutilation>
+  <UNCrime_Organ>Organ harvesting: {0}</UNCrime_Organ>
+  <UNCrime_Recruit>Forced recruitment: {0}</UNCrime_Recruit>
+  <UNCrime_Settlement>Unprovoked attack on a peaceful settlement: {0}</UNCrime_Settlement>
+  <UNCrime_Slavery>Enslavement: {0}</UNCrime_Slavery>
+  <UNCrime_UNAttack>Attack on UN aid workers: {0}</UNCrime_UNAttack>
+  <UNCrime_PollutionAssessment>Remaining attributable pollution: {0}</UNCrime_PollutionAssessment>
+  <UNCrime_PollutionStatus>{0} attributable polluted cells ({1}); {2} penalty points per assessment. Waste remainder: {3}/5 packs.</UNCrime_PollutionStatus>
+  <UNCrime_WasteDump>Waste dumped: {0} packs</UNCrime_WasteDump>
+  <UNCrime_WeaponPollution>New cell polluted by own weapon</UNCrime_WeaponPollution>
+  <UNCrime_ArrestDeployed>UN arrest detail deployed for {0}.</UNCrime_ArrestDeployed>
+  <UNCrime_ArrestPending>Arrest pending: {0}. Named leader must be reachable on a home map.</UNCrime_ArrestPending>
+  <UNCrime_ArrestTitle>UN arrest intervention</UNCrime_ArrestTitle>
+  <UNCrime_LeaderLocked>The target of an active proceeding cannot be replaced.</UNCrime_LeaderLocked>
+  <UNCrime_LeaderStatus>Leader: {0} · unconsumed crime points over 10 days: {1}/100</UNCrime_LeaderStatus>
+  <UNCrime_NoCandidate>No eligible colonist on a loaded map</UNCrime_NoCandidate>
+  <UNCrime_NoLeader>Not selected</UNCrime_NoLeader>
+  <UNCrime_UltimatumDelivered>Leader surrendered alive to the UN: {0}</UNCrime_UltimatumDelivered>
+  <UNCrime_UltimatumRefused>UN ultimatum refused or expired</UNCrime_UltimatumRefused>
+  <UNCrime_UltimatumStatus>UN ultimatum for {0} · {1:0.00} days remaining</UNCrime_UltimatumStatus>
+  <UNCrime_UltimatumTerms>At least 100 crime penalty points within ten days. Select your leader in UN Central and surrender them alive by UN shuttle within three days (+20 UN goodwill). The deadline runs even without selection. Expiry: −20 and a targeted arrest intervention.</UNCrime_UltimatumTerms>
+  <UNCrime_UltimatumTitle>UN surrender ultimatum</UNCrime_UltimatumTitle>
+  <UNCrime_Rules>Additional convention rules: neutral aggression −50, allied/peaceful settlement −75, UN aid workers −50; civilian killing −30, execution/incapacitated opponent −25; toxic weapons −30. Organ harvest −20, mutilation −15, abuse −5, forced recruitment −5, enslavement −15, unauthorized UN equipment −10. Only reliably attributed events count. Environmental assessment every 3 days: own fraction &gt;0 to &lt;25% −10, 25 to &lt;75% −20, 75%+ −50; every 5 dumped packs −1, each newly polluted own weapon cell −1. Ultimatum after 100 crime points in 10 days; 3-day surrender deadline, +20 success/−20 expiry. Missing or unreliable mod events are not automatically covered.</UNCrime_Rules>
+</LanguageData>

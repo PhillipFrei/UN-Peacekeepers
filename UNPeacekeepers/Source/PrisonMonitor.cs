@@ -64,6 +64,20 @@ namespace UNPeacekeepers
             if(recovery>0)UNContact.ApplyPrisonGoodwill(un,recovery,"UN_Recovery".Translate().ToString());
             negativeSinceAssessment=false;
         }
+        public void BlockRecovery(){negativeSinceAssessment=true;}
+        public float NextAssessmentDays=>nextAssessment<0?3f:Math.Max(0,nextAssessment-Find.TickManager.TicksGame)/60000f;
+        public int ExpectedAssessmentDelta
+        {
+            get
+            {
+                var prisoners=Prisoners();int tick=nextAssessment<0?Find.TickManager.TicksGame+Interval:nextAssessment;
+                var eligible=prisoners.Where(p=>due.TryGetValue(p.ThingID,out var grace)&&grace<=tick).ToList();
+                int penalty=eligible.Sum(p=>Inspect(p,prisoners).Sum(x=>x.Value))+UNRules.MixedHousingPenalty(eligible.Count(p=>IsMixed(p,prisoners)));
+                bool negative=negativeSinceAssessment||HasMixedHousing(prisoners)||prisoners.Any(p=>Inspect(p,prisoners).Any(x=>x.Value<0));
+                int g=Authorization.GetUN()?.PlayerGoodwill??0;
+                return Math.Max(-100,Math.Min(100,g+penalty+UNRules.Recovery(g,negative)))-g;
+            }
+        }
         public string AssessmentStatus()
         {
             var prisoners=Prisoners();
@@ -91,6 +105,7 @@ namespace UNPeacekeepers
             if(delta<0) negativeSinceAssessment=true;
             int before=un.PlayerGoodwill;
             UNContact.ApplyPrisonGoodwill(un,delta,p.LabelShortCap.ToString()+": "+reason);
+            if(delta<0)UNCrimeMonitor.ObserveExistingPenalty(-delta,reason);
             string msg="UN_PrisonResult".Translate(p.LabelShortCap,delta.ToString("+0;-0;0"),(un.PlayerGoodwill-before).ToString("+0;-0;0"),reason).ToString();
             lastEvents.Insert(0,msg);
             if(lastEvents.Count>60) lastEvents.RemoveAt(lastEvents.Count-1);

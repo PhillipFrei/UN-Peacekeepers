@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UN_Central_Title>UN headquarters</UN_Central_Title>
+  <UN_Central_ConsoleDescription>Open the local UN dashboard. No power or operator required. Settings are under Options → Mod settings → UN Peacekeepers.</UN_Central_ConsoleDescription>
+  <UN_Central_Subtitle>United Nations · Colony monitoring</UN_Central_Subtitle>
+  <UN_Central_Overview>Overview</UN_Central_Overview>
+  <UN_Central_Prison>Prison</UN_Central_Prison>
+  <UN_Central_History>History</UN_Central_History>
+  <UN_Central_Rules>Rules</UN_Central_Rules>
+  <UN_Central_Goodwill>Current UN goodwill</UN_Central_Goodwill>
+  <UN_Central_Action>Current action needed</UN_Central_Action>
+  <UN_Central_MixedAction>Gender separation not respected</UN_Central_MixedAction>
+  <UN_Central_PrisonAction>Negative conditions affecting {0} prisoners</UN_Central_PrisonAction>
+  <UN_Central_NoPrisonAction>No negative prison conditions currently observed.</UN_Central_NoPrisonAction>
+  <UN_Central_Next>Next assessment</UN_Central_Next>
+  <UN_Central_Days>{0} days</UN_Central_Days>
+  <UN_Central_Forecast>Expected change if conditions remain unchanged</UN_Central_Forecast>
+  <UN_Central_ForecastNote>Prison assessment snapshot including existing grace periods. New violations, prisoner arrivals or departures can change the outcome.</UN_Central_ForecastNote>
+  <UN_Central_Intervention>Military intervention</UN_Central_Intervention>
+  <UN_Central_Access>Access</UN_Central_Access>
+  <UN_Central_Alliance>alliance</UN_Central_Alliance>
+  <UN_Central_Elite>Elite orders</UN_Central_Elite>
+  <UN_Central_Manufacturing>UN equipment manufacturing</UN_Central_Manufacturing>
+  <UN_Central_15Days>15 days</UN_Central_15Days>
+  <UN_Central_Permanent>Manufacturing authorization permanently granted.</UN_Central_Permanent>
+  <UN_Central_ActiveMissions>Active UN missions</UN_Central_ActiveMissions>
+  <UN_Central_NoMissions>No active UN mission.</UN_Central_NoMissions>
+  <UN_Central_MissionPool>View mission offers</UN_Central_MissionPool>
+  <UN_Central_StatusIntervention>Military intervention</UN_Central_StatusIntervention>
+  <UN_Central_StatusProbation>Probation</UN_Central_StatusProbation>
+  <UN_Central_StatusCooperation>Cooperation available</UN_Central_StatusCooperation>
+  <UN_Central_StatusTrusted>Trusted partner</UN_Central_StatusTrusted>
+  <UN_Central_StatusPartner>Close UN partner</UN_Central_StatusPartner>
+  <UN_Central_From>From {0}</UN_Central_From>
+  <UN_Central_NextIndividual>Next eligible assessment</UN_Central_NextIndividual>
+  <UN_Central_Health>Health</UN_Central_Health>
+  <UN_Central_Food>Food</UN_Central_Food>
+  <UN_Central_Bed>Accommodation: {0}</UN_Central_Bed>
+  <UN_Central_NoBed>no assigned bed</UN_Central_NoBed>
+  <UN_Central_ActivityRules>INACTIVITY\n\nTen days without accepting a new UN mission: −10 goodwill, never below +50. Acceptance resets the interval; completion and radio contact do not. No penalty at +50 or below. New games and migration start with a full interval.</UN_Central_ActivityRules>
+  <UN_Central_AccessRules>ACCESS THRESHOLDS\nGoodwill|Access\n0|Ordinary UN orders\n+50|Advanced UN orders\n+75 and alliance|Reinforcements when deployment conditions are met; existing three-day cooldown, no goodwill charge\n+80|Elite orders\n+100 for 15 uninterrupted days|Permanent UN equipment manufacturing authorization. Ongoing probation resets below +100.\n−50 or worse|Military intervention against the colony</UN_Central_AccessRules>
+  <UN_Central_InterventionRules>MILITARY ESCALATION\nGoodwill|Strength|Interval\n−50|×1.5|12 days\n−65|×2|9 days\n−80|×3|6 days\n−90|×4|4 days\n−100|×5|3 days\n\nValues interpolate between thresholds. First intervention after one day; subsequent timing starts from the last successful raid. Above −50 no new interventions begin. Actual storyteller points are multiplied by the goodwill factor and UN raid strength setting.</UN_Central_InterventionRules>
+  <UN_Central_Leadership>Colony leadership</UN_Central_Leadership>
+  <UN_Central_SelectLeader>Choose your faction leader</UN_Central_SelectLeader>
+  <UN_Central_InactivityDue>Next inactivity penalty without a new acceptance</UN_Central_InactivityDue>
+  <UN_Central_Environment>Environment – whole colony</UN_Central_Environment>
+  <UN_Central_EnvironmentAction>Own pollution: next separate environmental penalty</UN_Central_EnvironmentAction>
+  <UN_Central_NextEnvironment>Next separate environmental assessment</UN_Central_NextEnvironment>
+  <UN_Central_EnvironmentNote>Only reliably attributed player-caused cells still polluted on home maps. Pre-existing pollution and unknown sources are not attributed. This global assessment is independent of individual prisoners.</UN_Central_EnvironmentNote>
+</LanguageData>

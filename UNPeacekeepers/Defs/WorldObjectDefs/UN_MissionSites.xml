@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <WorldObjectDef ParentName="Site">
+    <defName>UN_MissionSite</defName><label>UN operation site</label>
+    <worldObjectClass>UNPeacekeepers.UNMissionSite</worldObjectClass>
+    <description>A temporary humanitarian operation. Review the assignment before travelling. Player belongings are never removed automatically.</description>
+  </WorldObjectDef>
+</Defs>

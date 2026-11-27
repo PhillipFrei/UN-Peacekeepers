@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <SitePartDef>
+    <defName>UN_MissionCamp</defName><label>UN operation</label>
+    <description>A temporary UN operation site with a marked handover point.</description>
+    <siteTexture>World/WorldObjects/Sites/ItemStash</siteTexture>
+    <expandingIconTexture>World/WorldObjects/Expanding/Sites/ItemStash</expandingIconTexture>
+    <considerEnteringAsAttack>false</considerEnteringAsAttack>
+    <wantsThreatPoints>false</wantsThreatPoints><selectionWeight>0</selectionWeight>
+    <forceExitAndRemoveMapCountdownDurationDays>-1</forceExitAndRemoveMapCountdownDurationDays>
+    <arrivedLetter>Consult the UN assignment. The handover point provides delivery, treatment and evacuation actions.</arrivedLetter>
+    <arrivedLetterDef>NeutralEvent</arrivedLetterDef>
+    <gravShipsCanLandOn>true</gravShipsCanLandOn>
+  </SitePartDef>
+</Defs>
