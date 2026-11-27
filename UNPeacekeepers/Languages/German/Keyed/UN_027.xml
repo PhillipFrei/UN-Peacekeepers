@@ -9,6 +9,6 @@
   <UN_OrdinaryAssignments>Gewöhnliche UN-Aufträge (ab 0)</UN_OrdinaryAssignments>
   <UN_AdvancedAssignments>Fortgeschrittene UN-Aufträge (ab +50)</UN_AdvancedAssignments>
   <UN_AssignmentLow>Mindestens {0} UN-Gunst erforderlich.</UN_AssignmentLow>
-  <UN_NoGenerator>In v0.2.7 gibt es noch keinen UN-Missionsgenerator. Nur vorhandene kompatible UN-Quests können angenommen werden.</UN_NoGenerator>
+  <UN_NoGenerator>In v0.2.8 gibt es noch keinen UN-Missionsgenerator. Nur vorhandene kompatible UN-Quests können angenommen werden.</UN_NoGenerator>
   <UN_ProgressionInfo>Aufträge: gewöhnlich ab 0, fortgeschritten ab +50; Verstärkung ab +75 und Bündnis. Noch kein eigener Missionsgenerator: ohne zusätzliche UN-Quests kein regulärer Weg von 0 zu positiver Gunst. Erholung: +10 alle 3 Tage ohne erfassten Verstoß, auch bei leeren Gefängnissen, höchstens bis 0.</UN_ProgressionInfo>
 </LanguageData>

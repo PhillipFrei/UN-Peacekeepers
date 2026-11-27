@@ -32,7 +32,7 @@ namespace UNPeacekeepers
         public static void ApplyPrisonGoodwill(Faction un,int delta,string reason)
         {
             var old=prisonContext; prisonContext=reason;
-            try { un.TryAffectGoodwillWith(Faction.OfPlayer,delta,false,false); }
+            try { un.TryAffectGoodwillWith(Faction.OfPlayer,delta,false,false); SyncInterventionRelation(un); }
             finally { prisonContext=old; }
         }
         public void LogChange(int before,int after,string reason)
@@ -47,17 +47,28 @@ namespace UNPeacekeepers
             if(journal.Count>300)journal.RemoveAt(journal.Count-1);
         }
         public IEnumerable<string> Entries => journal;
-        // Piecewise linear interpolation between the agreed goodwill thresholds.
-        private static readonly float[] GoodwillStrength = { 1.5f, 2f, 3f, 4f, 5f };
-        private static readonly float[] GoodwillDays = { 12f, 9f, 6f, 4f, 3f };
-        private static float EscalationValue(int g, float[] values)
+        public static int Interval(int g) => Mathf.RoundToInt(UNRules.InterventionDays(g)*Day);
+        public static float GoodwillMultiplier(int g) => UNRules.InterventionMultiplier(g);
+        // Vanilla becomes hostile at -75. Synchronize only the UN/player relationship
+        // to the agreed -50 boundary without changing goodwill or involving NPC diplomacy.
+        private static void SyncInterventionRelation(Faction un)
         {
-            float step = Mathf.Clamp((-g - 80) / 5f, 0f, 4f);
-            int lo = Mathf.Min(3, Mathf.FloorToInt(step));
-            return Mathf.Lerp(values[lo], values[lo+1], step-lo);
+            if(Authorization.Instance?.IsolationReady!=true || Faction.OfPlayerSilentFail==null) return;
+            var player=Faction.OfPlayer;
+            var a=un.RelationWith(player);
+            var b=player.RelationWith(un);
+            if(UNRules.InterventionActive(un.PlayerGoodwill))
+            {
+                a.kind=FactionRelationKind.Hostile;
+                b.kind=FactionRelationKind.Hostile;
+            }
+            else if(a.kind==FactionRelationKind.Hostile || b.kind==FactionRelationKind.Hostile)
+            {
+                var kind=un.PlayerGoodwill>=75 ? FactionRelationKind.Ally : FactionRelationKind.Neutral;
+                a.kind=kind;
+                b.kind=kind;
+            }
         }
-        public static int Interval(int g) => Mathf.RoundToInt(EscalationValue(g, GoodwillDays)*Day);
-        public static float GoodwillMultiplier(int g) => EscalationValue(g, GoodwillStrength);
         public static float RaidPoints(Map map,int g)
         {
             // Use the actual storyteller result, including other mods' threat-scaling patches.
@@ -68,7 +79,7 @@ namespace UNPeacekeepers
             .OrderByDescending(m=>StorytellerUtility.DefaultThreatPointsNow(m)).FirstOrDefault();
         public string RaidStrengthStatus(Faction un)
         {
-            if(un==null || un.defeated || un.deactivated || un.PlayerGoodwill>-80)
+            if(un==null || un.defeated || un.deactivated || !UNRules.InterventionActive(un.PlayerGoodwill))
                 return "UN_C_StrengthInactive".Translate().ToString();
             var map=RaidTarget();
             if(map==null) return "UN_C_NoMap".Translate().ToString();
@@ -80,7 +91,7 @@ namespace UNPeacekeepers
         public string RaidStatus(Faction un)
         {
             if(un==null || un.defeated || un.deactivated)return "UN_C_Unavailable".Translate().ToString();
-            if(un.PlayerGoodwill>-80)return "UN_C_NoRaid".Translate().ToString();
+            if(!UNRules.InterventionActive(un.PlayerGoodwill))return "UN_C_NoRaid".Translate().ToString();
             if(!un.HostileTo(Faction.OfPlayer))return "UN_C_NotHostile".Translate().ToString();
             if(!Find.Maps.Any(m=>m.IsPlayerHome))return "UN_C_NoMap".Translate().ToString();
             return "UN_C_RaidDue".Translate((Math.Max(0,nextRaid-Find.TickManager.TicksGame)/(float)Day).ToString("0.00"),(Interval(un.PlayerGoodwill)/(float)Day).ToString("0.0")).ToString();
@@ -94,9 +105,10 @@ namespace UNPeacekeepers
             var un=Authorization.GetUN();
             if(un==null || un.defeated || un.deactivated)return;
             int g=un.PlayerGoodwill;
+            SyncInterventionRelation(un);
             if(knownGoodwill==1000){knownGoodwill=g;Add("UN_C_Baseline".Translate(g).ToString());}
             else if(g!=knownGoodwill)LogChange(knownGoodwill,g,"UN_C_Unknown".Translate().ToString());
-            if(g>-80)
+            if(!UNRules.InterventionActive(g))
             {nextRaid=-1;lastRaid=-1;escalationStart=-1;return;}
             if(escalationStart<0)
             {
