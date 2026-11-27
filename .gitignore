@@ -1,0 +1,5 @@
+**/bin/
+**/obj/
+UNPeacekeepers/Assemblies/
+*.zip
+*.zip.sha256

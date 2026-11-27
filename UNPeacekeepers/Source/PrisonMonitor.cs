@@ -15,12 +15,16 @@ namespace UNPeacekeepers
         private Dictionary<string,int> due = new Dictionary<string,int>();
         private List<string> lastEvents = new List<string>();
         private int nextScan;
+        private int nextAssessment = -1;
+        private bool negativeSinceAssessment;
         public PrisonMonitor(Game game) { }
         public static PrisonMonitor Instance => Current.Game?.GetComponent<PrisonMonitor>();
         public static bool Eligible(Pawn p) => p != null && !p.Dead && p.Spawned && p.IsPrisonerOfColony && p.RaceProps.Humanlike && p.Map != null && p.Map.IsPlayerHome;
         public static List<Pawn> Prisoners() => Find.Maps.Where(m=>m.IsPlayerHome).SelectMany(m=>m.mapPawns.AllPawnsSpawned).Where(Eligible).ToList();
         public override void ExposeData()
         {
+            Scribe_Values.Look(ref nextAssessment, "unNextAssessment", -1);
+            Scribe_Values.Look(ref negativeSinceAssessment, "unNegativeSinceAssessment", false);
             Scribe_Collections.Look(ref due, "unPrisonDue", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref lastEvents, "unPrisonEvents", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit) { if(due==null) due=new Dictionary<string,int>(); if(lastEvents==null) lastEvents=new List<string>(); }
@@ -34,29 +38,50 @@ namespace UNPeacekeepers
             var prisoners=Prisoners();
             var ids=new HashSet<string>(prisoners.Select(p=>p.ThingID));
             foreach(var key in due.Keys.Where(k=>!ids.Contains(k)).ToList()) due.Remove(key);
-            if(prisoners.Count==0) return;
-            var un=Authorization.GetUN();
+            // Keep old per-prisoner deadlines as grace periods when migrating existing saves.
             foreach(var p in prisoners)
+                if(!due.ContainsKey(p.ThingID)) due[p.ThingID]=now+Interval;
+            if(nextAssessment<0) nextAssessment=now+Interval;
+            var un=Authorization.GetUN();
+            if(un==null || un.defeated || un.deactivated) return;
+            var inspections=prisoners.ToDictionary(p=>p,p=>Inspect(p,prisoners));
+            bool mixed=HasMixedHousing(prisoners);
+            // Any observed negative condition blocks recovery for the entire assessment period.
+            if(mixed || inspections.Values.Any(v=>v.Any(x=>x.Value<0))) negativeSinceAssessment=true;
+            if(now<nextAssessment) return;
+            nextAssessment=now+Interval;
+            int eligibleMixed=0;
+            foreach(var p in prisoners.Where(p=>now>=due[p.ThingID]))
             {
-                int deadline;
-                if(!due.TryGetValue(p.ThingID,out deadline)) { due[p.ThingID]=now+Interval; continue; }
-                if(now<deadline || un==null || un.defeated) continue;
-                due[p.ThingID]=now+Interval;
-                var result=Inspect(p,prisoners);
-                int score=result.Sum(r=>r.Value);
-                Record(p,score,string.Join("; ",result.Select(r=>r.Key)));
+                var result=inspections[p];
+                int score=result.Sum(x=>x.Value);
+                if(score<0) Record(p,score,string.Join("; ",result.Select(x=>x.Key)));
+                if(IsMixed(p,prisoners))eligibleMixed++;
             }
+            int mixedPenalty=UNRules.MixedHousingPenalty(eligibleMixed);
+            if(mixedPenalty<0)Record(prisoners.First(p=>IsMixed(p,prisoners)),mixedPenalty,"UN_MixedSummary".Translate().ToString());
+            int recovery=UNRules.Recovery(un.PlayerGoodwill,negativeSinceAssessment);
+            if(recovery>0)UNContact.ApplyPrisonGoodwill(un,recovery,"UN_Recovery".Translate().ToString());
+            negativeSinceAssessment=false;
         }
         public float DaysUntil(Pawn p)
         {
-            int t;
-            return due.TryGetValue(p.ThingID,out t)? Math.Max(0,t-Find.TickManager.TicksGame)/60000f:3f;
+            int grace;
+            due.TryGetValue(p.ThingID,out grace);
+            return Math.Max(0,Math.Max(grace,nextAssessment)-Find.TickManager.TicksGame)/60000f;
         }
+        public static bool IsMixed(Pawn p,List<Pawn> prisoners)
+        {
+            var room=RestUtility.FindBedFor(p)?.GetRoom();
+            return room!=null && p.gender!=Gender.None && prisoners.Any(q=>q!=p && q.Map==p.Map && q.gender!=Gender.None && q.gender!=p.gender && RestUtility.FindBedFor(q)?.GetRoom()==room);
+        }
+        public static bool HasMixedHousing(List<Pawn> prisoners)=>prisoners.Any(p=>IsMixed(p,prisoners));
         public IEnumerable<string> Events => lastEvents;
         public void Record(Pawn p,int delta,string reason)
         {
             var un=Authorization.GetUN();
             if(un==null || un.defeated || delta==0) return;
+            if(delta<0) negativeSinceAssessment=true;
             int before=un.PlayerGoodwill;
             UNContact.ApplyPrisonGoodwill(un,delta,p.LabelShortCap.ToString()+": "+reason);
             string msg="UN_PrisonResult".Translate(p.LabelShortCap,delta.ToString("+0;-0;0"),(un.PlayerGoodwill-before).ToString("+0;-0;0"),reason).ToString();
@@ -71,14 +96,14 @@ namespace UNPeacekeepers
             var bed=RestUtility.FindBedFor(p);
             var room=bed?.GetRoom();
             if(bed==null || !bed.ForPrisoners || bed.def==ThingDefOf.SleepingSpot || room==null || room.PsychologicallyOutdoors) add("UN_NoBed", -2);
-            if(room!=null && p.gender!=Gender.None && prisoners.Any(q=>q!=p && q.Map==p.Map && q.gender!=Gender.None && q.gender!=p.gender && RestUtility.FindBedFor(q)?.GetRoom()==room)) add("UN_MixedRoom",-2);
+
             if(p.needs?.food!=null && p.needs.food.CurLevelPercentage<0.25f) add("UN_Hungry",-5);
             var h=p.health.hediffSet;
             int missing=h.GetMissingPartsCommonAncestors().Count(m=>m.Part!=null && new[]{"Arm","Leg","Hand","Foot","Eye","Ear","Kidney","Lung","Heart","Liver","Stomach"}.Contains(m.Part.def.defName) && !h.hediffs.Any(a=>a is Hediff_AddedPart && a.Part==m.Part));
             for(int i=0;i<Math.Min(4,missing);i++) add("UN_MissingPart",-5);
             if(h.hediffs.Any(a=>!(a is Hediff_Injury) && a.TendableNow())) add("UN_Illness",-5);
             if(h.hediffs.Any(a=>a is Hediff_Injury && a.TendableNow())) add("UN_UntendedInjury",-3);
-            if(issues.Count==0) add("UN_GoodCare",3);
+            if(issues.Count==0) add("UN_GoodCare",0);
             return issues;
         }
     }
@@ -92,13 +117,14 @@ namespace UNPeacekeepers
                 PrisonMonitor.Instance?.Record(__0,-15,"UN_SurgeryViolation".Translate().ToString());
         }
     }
-    public sealed class MainTabWindow_UN : MainTabWindow
+    public sealed class MainTabWindow_UN : Window
     {
+        public MainTabWindow_UN(){doCloseX=true;doCloseButton=true;absorbInputAroundWindow=true;}
         private Vector2 scroll;
         private int refreshAt=-1;
         private List<Pawn> prisoners=new List<Pawn>();
         private Dictionary<Pawn,List<KeyValuePair<string,int>>> statuses=new Dictionary<Pawn,List<KeyValuePair<string,int>>>();
-        public override Vector2 RequestedTabSize => new Vector2(830f,570f);
+        public override Vector2 InitialSize => new Vector2(830f,570f);
         public override void DoWindowContents(Rect rect)
         {
             var un=Authorization.GetUN();
@@ -116,7 +142,7 @@ namespace UNPeacekeepers
             Widgets.Label(new Rect(0,y,rect.width,25),"UN_Count".Translate(prisoners.Count));y+=28;
             var history=mon?.Events.Take(15).ToList()??new List<string>();
             float w=rect.width-24; float height=prisoners.Count*92+history.Count*48+70;
-            Widgets.BeginScrollView(new Rect(0,y,rect.width,rect.height-y),ref scroll,new Rect(0,0,w,height));
+            Widgets.BeginScrollView(new Rect(0,y,rect.width,rect.height-y-45),ref scroll,new Rect(0,0,w,height));
             float sy=0;
             foreach(var p in prisoners)
             {
@@ -124,7 +150,7 @@ namespace UNPeacekeepers
                 Widgets.Label(new Rect(0,sy,w,24),p.LabelShortCap+"  |  "+p.gender.GetLabel()+"  |  "+"UN_Next".Translate((mon?.DaysUntil(p)??3f).ToString("0.00")));
                 if(p.needs?.food!=null) Widgets.Label(new Rect(0,sy+24,w,23),"UN_Condition".Translate(p.needs.food.CurLevelPercentage.ToStringPercent(),p.health.summaryHealth.SummaryHealthPercent.ToStringPercent()));
                 var result=statuses[p];
-                Widgets.Label(new Rect(0,sy+47,w,43),string.Join("; ",result.Select(r=>r.Key+" ("+r.Value.ToString("+0;-0;0")+")")));
+                Widgets.Label(new Rect(0,sy+47,w,43),string.Join("; ",result.Select(r=>r.Key+" ("+r.Value.ToString("+0;-0;0")+")"))+(PrisonMonitor.IsMixed(p,prisoners)?"; "+"UN_MixedSummary".Translate():""));
                 sy+=92;
             }
             if(prisoners.Count==0) { Widgets.Label(new Rect(0,sy,w,30),"UN_Empty".Translate());sy+=32; }

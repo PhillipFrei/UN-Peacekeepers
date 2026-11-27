@@ -15,6 +15,7 @@ namespace UNPeacekeepers
         private int knownGoodwill=1000;
         private List<string> journal=new List<string>();
         private static string prisonContext;
+        internal static bool MutationAllowed => prisonContext != null;
         public UNContact(Game game) {}
         public static UNContact Instance => Current.Game?.GetComponent<UNContact>();
         public static bool IsUN(Faction f) => f?.def?.defName=="UN_Peacekeepers";
@@ -180,38 +181,44 @@ namespace UNPeacekeepers
         static class ContactMenu
         {
             static DiaOption Back(Pawn pawn,Faction f)=>new DiaOption("GoBack".Translate()){linkLateBind=()=>FactionDialogMaker.FactionDialogFor(pawn,f)};
+            static DiaOption AssignmentOption(Pawn pawn,Faction f,bool advanced)
+            {
+                int threshold=UNRules.AssignmentThreshold(advanced);
+                var option=new DiaOption((advanced?"UN_AdvancedAssignments":"UN_OrdinaryAssignments").Translate());
+                if(f.PlayerGoodwill<threshold){option.Disable("UN_AssignmentLow".Translate(threshold));return option;}
+                var offers=Find.QuestManager.QuestsListForReading.Where(q=>!q.hidden&&!q.hiddenInUI&&q.State==QuestState.NotYetAccepted&&q.root!=null&&q.root.defName.StartsWith("UN_",StringComparison.Ordinal)&&q.root.defName.StartsWith("UN_Advanced_",StringComparison.Ordinal)==advanced).ToList();
+                if(offers.Count==0){option.Disable("UN_NoGenerator".Translate());return option;}
+                var node=new DiaNode("UN_C_QuestIntro".Translate());
+                foreach(var q in offers)
+                {
+                    var current=q;
+                    var detail=new DiaNode(current.description);
+                    var accept=new DiaOption("UN_C_Accept".Translate()){resolveTree=true,action=()=>{
+                        if(f.PlayerGoodwill>=threshold && current.State==QuestState.NotYetAccepted && !current.RequiresAccepter)current.Accept(null);
+                        else Messages.Message("UN_C_QuestChanged".Translate(),MessageTypeDefOf.RejectInput,false);
+                    }};
+                    if(current.RequiresAccepter)accept.Disable("UN_C_QuestNeedsPawn".Translate());
+                    detail.options.Add(accept);detail.options.Add(Back(pawn,f));
+                    node.options.Add(new DiaOption(current.name){link=detail});
+                }
+                node.options.Add(Back(pawn,f));option.link=node;return option;
+            }
             static void Postfix(Pawn __0,Faction __1,DiaNode __result)
             {
                 var pawn=__0;var f=__1;var comp=Instance;
                 if(!IsUN(f)||__result==null||comp==null)return;
-                var info=new DiaOption("UN_C_Report".Translate()){resolveTree=true,action=()=>Find.WindowStack.Add(new Dialog_UNJournal())};
-                __result.options.Insert(0,info);
+                // Replace vanilla gift/trader/quest options for this faction only.
+                __result.options.Clear();
+                __result.options.Add(new DiaOption("UN_C_Report".Translate()){resolveTree=true,action=()=>Find.WindowStack.Add(new Dialog_UNJournal())});
+                __result.options.Add(new DiaOption("UN_PrisonReport".Translate()){resolveTree=true,action=()=>Find.WindowStack.Add(new MainTabWindow_UN())});
+                __result.options.Add(new DiaOption("UN_DirectSettings".Translate()){resolveTree=true,action=()=>Find.WindowStack.Add(new Dialog_UNSettings())});
                 var aid=new DiaOption("UN_C_Aid".Translate()){resolveTree=true,action=()=>comp.RequestAid(f,pawn.Map)};
                 string block=comp.AidBlock(f,pawn.Map);
                 if(block!=null)aid.Disable(block);
-                __result.options.Insert(1,aid);
-                var quest=new DiaOption("UN_C_Quests".Translate());
-                var offers=Find.QuestManager.QuestsListForReading.Where(q=>!q.hidden&&!q.hiddenInUI&&q.State==QuestState.NotYetAccepted&&q.root!=null&&q.root.defName.StartsWith("UN_",StringComparison.Ordinal)).ToList();
-                if(f.PlayerGoodwill<50)quest.Disable("UN_C_QuestLow".Translate());
-                else if(offers.Count==0)quest.Disable("UN_C_NoQuests".Translate());
-                else
-                {
-                    var node=new DiaNode("UN_C_QuestIntro".Translate());
-                    foreach(var q in offers)
-                    {
-                        var current=q;
-                        var detail=new DiaNode(current.description);
-                        var accept=new DiaOption("UN_C_Accept".Translate()){resolveTree=true,action=()=>{
-                            if(f.PlayerGoodwill>=50&&current.State==QuestState.NotYetAccepted&&!current.RequiresAccepter)current.Accept(null);
-                            else Messages.Message("UN_C_QuestChanged".Translate(),MessageTypeDefOf.RejectInput,false);
-                        }};
-                        if(current.RequiresAccepter)accept.Disable("UN_C_QuestNeedsPawn".Translate());
-                        detail.options.Add(accept);detail.options.Add(Back(pawn,f));
-                        node.options.Add(new DiaOption(current.name){link=detail});
-                    }
-                    node.options.Add(Back(pawn,f));quest.link=node;
-                }
-                __result.options.Insert(2,quest);
+                __result.options.Add(aid);
+                __result.options.Add(AssignmentOption(pawn,f,false));
+                __result.options.Add(AssignmentOption(pawn,f,true));
+                __result.options.Add(new DiaOption("Disconnect".Translate()){resolveTree=true});
             }
         }
     }
@@ -229,11 +236,12 @@ namespace UNPeacekeepers
             Widgets.Label(new Rect(0,34,rect.width,25),"UN_StatusLine".Translate(un==null?"—":un.PlayerGoodwill.ToString(),un?.leader?.LabelShortCap.ToString()??"—",Authorization.Granted?"UN_Yes".Translate():"UN_No".Translate()));
             Widgets.Label(new Rect(0,62,rect.width,25),comp?.RaidStatus(un)??"—");
             Widgets.Label(new Rect(0,90,rect.width,42),comp?.RaidStrengthStatus(un)??"—");
-            Widgets.Label(new Rect(0,135,rect.width,25),"UN_C_HistoryTitle".Translate());
+            Widgets.Label(new Rect(0,135,rect.width,72),"UN_ProgressionInfo".Translate());
+            Widgets.Label(new Rect(0,210,rect.width,25),"UN_C_HistoryTitle".Translate());
             var entries=comp?.Entries.ToList()??new List<string>();
             float width=rect.width-22;
             var heights=entries.Select(e=>Math.Max(28,Text.CalcHeight(e,width-8)+8)).ToList();
-            Widgets.BeginScrollView(new Rect(0,165,rect.width,rect.height-215),ref scroll,new Rect(0,0,width,Math.Max(35,heights.Sum())));
+            Widgets.BeginScrollView(new Rect(0,240,rect.width,rect.height-290),ref scroll,new Rect(0,0,width,Math.Max(35,heights.Sum())));
             float y=0;
             if(entries.Count==0)Widgets.Label(new Rect(0,0,width,30),"UN_C_Empty".Translate());
             for(int i=0;i<entries.Count;i++){Widgets.Label(new Rect(0,y,width-8,heights[i]),entries[i]);y+=heights[i];}

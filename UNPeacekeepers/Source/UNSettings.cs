@@ -17,7 +17,8 @@ namespace UNPeacekeepers
     public sealed class UNMod : Mod
     {
         private static UNSettings settings;
-        public UNMod(ModContentPack content):base(content) { settings=GetSettings<UNSettings>(); }
+        public static UNMod Instance { get; private set; }
+        public UNMod(ModContentPack content):base(content) { Instance=this; settings=GetSettings<UNSettings>(); }
         public static float Strength => settings==null ? 1f : Mathf.Clamp(settings.raidStrength,0.25f,5f);
         public override string SettingsCategory() => "UN Peacekeepers";
         public override void DoSettingsWindowContents(Rect rect)

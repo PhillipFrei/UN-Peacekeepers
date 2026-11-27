@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UN_PrisonReport>UN prison report</UN_PrisonReport>
+  <UN_DirectSettings>UN settings</UN_DirectSettings>
+  <UN_ConsoleLocal>Open local information without a pawn or power. Radio contact remains available through the normal contact menu.</UN_ConsoleLocal>
+  <UN_Recovery>Three days without recorded negative violations: recovery capped at zero</UN_Recovery>
+  <UN_InitialGoodwill>Starting goodwill for a new game</UN_InitialGoodwill>
+  <UN_MixedSummary>Mixed housing: −10 once per overall assessment</UN_MixedSummary>
+  <UN_OrdinaryAssignments>Ordinary UN assignments (from 0)</UN_OrdinaryAssignments>
+  <UN_AdvancedAssignments>Advanced UN assignments (from +50)</UN_AdvancedAssignments>
+  <UN_AssignmentLow>At least {0} UN goodwill required.</UN_AssignmentLow>
+  <UN_NoGenerator>v0.2.7 has no UN mission generator. Only existing compatible UN quests can be accepted.</UN_NoGenerator>
+  <UN_ProgressionInfo>Assignments: ordinary at 0, advanced at +50; aid at +75 and allied. No built-in mission generator yet: without additional UN quests there is no normal path from 0 to positive goodwill. Recovery: +10 every 3 days without recorded violations, including empty prisons, capped at zero.</UN_ProgressionInfo>
+</LanguageData>

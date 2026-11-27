@@ -9,7 +9,7 @@ namespace UNPeacekeepers
     [StaticConstructorOnStartup]
     public static class Bootstrap
     {
-        static Bootstrap() { new Harmony("local.geneva.unpeacekeepers.authorization").PatchAll(); Log.Message("[UN Peacekeepers] Authorization 0.2.6 initialized."); }
+        static Bootstrap() { new Harmony("local.geneva.unpeacekeepers.authorization").PatchAll(); Log.Message("[UN Peacekeepers] Authorization 0.2.7 initialized."); }
     }
     public sealed class Authorization : GameComponent
     {
@@ -17,6 +17,8 @@ namespace UNPeacekeepers
         private int startTick = -1;
         private int reportedDay = -1;
         private bool granted;
+        private bool isolationReady;
+        public bool IsolationReady => isolationReady;
         private bool pendingNewGameGoodwill;
         private int nextMaintenanceTick = -1;
         public Authorization(Game game) { }
@@ -27,6 +29,7 @@ namespace UNPeacekeepers
         {
             Scribe_Values.Look(ref startTick, "unProbationStart", -1);
             Scribe_Values.Look(ref reportedDay, "unProbationReportedDay", -1);
+            Scribe_Values.Look(ref isolationReady, "unIsolationReady", false);
             Scribe_Values.Look(ref granted, "unManufacturingGranted", false);
             Scribe_Values.Look(ref pendingNewGameGoodwill, "unPendingNewGameGoodwill", false);
         }
@@ -52,12 +55,22 @@ namespace UNPeacekeepers
         {
             var un = GetUN();
             if (un == null || un.defeated) return;
+            if(!isolationReady)
+            {
+                // Snapshot the displayed old goodwill before dropping vanilla situational caps.
+                int goodwill=un.PlayerGoodwill;
+                un.RelationWith(Faction.OfPlayer).baseGoodwill=goodwill;
+                Faction.OfPlayer.RelationWith(un).baseGoodwill=goodwill;
+                isolationReady=true;
+            }
+            un.hidden=true;
+            un.temporary=false;
             if (pendingNewGameGoodwill)
             {
                 pendingNewGameGoodwill = false;
                 // Only a new game's default neutral relation; never reset an existing save.
                 if (un.PlayerGoodwill == 0 && !un.HostileTo(Faction.OfPlayer))
-                    un.TryAffectGoodwillWith(Faction.OfPlayer, Rand.RangeInclusive(0, 10), false, false);
+                    UNContact.ApplyPrisonGoodwill(un, Rand.RangeInclusive(0, 10), "UN_InitialGoodwill".Translate().ToString());
             }
             if (un.leader == null)
             {

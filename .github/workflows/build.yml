@@ -1,4 +1,4 @@
-name: Build UN authorization DLL
+name: Build and verify UN Peacekeepers
 on:
   push:
     branches: [main]
@@ -13,10 +13,16 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet build UNPeacekeepers/Source/UNPeacekeepers.csproj -c Release
-      - run: rm -rf UNPeacekeepers/Source/obj UNPeacekeepers/Source/bin && zip -qr UN-source-and-dll.zip UNPeacekeepers
+      - name: Test goodwill boundaries and assessment rules
+        run: dotnet run --project tests/RulesTests.csproj -c Release
+      - name: Compile RimWorld 1.6 DLL
+        run: dotnet build UNPeacekeepers/Source/UNPeacekeepers.csproj -c Release
+      - name: Verify original assets and package complete mod
+        run: python3 tools/package.py
       - uses: actions/upload-artifact@v4
         with:
-          name: UN-source-and-dll
-          path: UN-source-and-dll.zip
+          name: UN-Peacekeepers-v0.2.7-complete
+          path: |
+            UN_Peacekeepers_v0.2.7.zip
+            UN_Peacekeepers_v0.2.7.zip.sha256
           if-no-files-found: error
