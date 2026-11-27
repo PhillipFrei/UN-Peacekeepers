@@ -330,6 +330,7 @@ namespace UNPeacekeepers
                     {
                         var p=PawnGenerator.GeneratePawn(PawnKindDefOf.SpaceRefugee,supportedFaction);targets.Add(p);
                         GenSpawn.Spawn(p,CellFinder.RandomClosewalkCellNear(center,map,7),map);
+                        if(kind==3)p.guest.SetGuestStatus(enemyFaction,GuestStatus.Prisoner);
                         if(kind==1){var injury=HediffMaker.MakeHediff(HediffDefOf.Cut,p,p.RaceProps.body.corePart);injury.Severity=tier==0?5f:10f;p.health.AddHediff(injury);}
                     }
                     if(kind==1)
