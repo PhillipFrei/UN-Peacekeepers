@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UN029_MixedBad>Geschlechtertrennung: Verstoß — −10 Gunst insgesamt je Bewertung (alle 3 Tage).</UN029_MixedBad>
+  <UN029_MixedOK>Geschlechtertrennung eingehalten.</UN029_MixedOK>
+  <UN029_Status>Aktuelle Situation</UN029_Status>
+  <UN029_Rules>Regeln und Schwellen</UN029_Rules>
+  <UN029_Goodwill>Aktuelle UN-Gunst: {0}</UN029_Goodwill>
+  <UN029_Access>Berechtigungen</UN029_Access>
+  <UN029_Active>Es läuft bereits ein UN-Hilfsgüterauftrag.</UN029_Active>
+  <UN029_Cooldown>Neue Aufträge sind frühestens 3 Tage nach der letzten Annahme verfügbar.</UN029_Cooldown>
+  <UN029_Deliver>Verfügbare Hilfsgüter jetzt abgeben</UN029_Deliver>
+  <UN029_Cancel>Auftrag abbrechen (abgegebene Güter bleiben abgegeben)</UN029_Cancel>
+  <UN029_FoodTitle>UN-Auftrag: Notrationen</UN029_FoodTitle>
+  <UN029_MedicalTitle>UN-Auftrag: Medizinische Hilfe</UN029_MedicalTitle>
+  <UN029_Terms>Liefere {0} × {1} innerhalb von 10 Tagen. Belohnung: +{2} UN-Gunst (höchstens +100).\n\nNimm mit einem Kolonisten über eine Kommunikationskonsole Kontakt zur UN auf. Öffne diese Auftragsstufe erneut und wähle „Verfügbare Hilfsgüter jetzt abgeben“. Erreichbare, nicht verbotene Güter auf dieser Heimatkarte werden sofort verbraucht. Teilabgaben sind möglich und werden gespeichert. Keine automatische Abgabe.\n\nNur ein UN-Auftrag gleichzeitig; neue Annahme frühestens nach 3 Tagen. Bei Abbruch oder Fristablauf bleiben abgegebene Güter verbraucht, ohne Gunststrafe. Bei negativer UN-Gunst ist keine Abgabe möglich.</UN029_Terms>
+  <UN029_Progress>Abgegeben: {0}/{1} · Restfrist: {2:0.0} Tage</UN029_Progress>
+  <UN029_Assessment>Nächste Gefängnisbewertung in {0:0.00} Tagen.\n{1}</UN029_Assessment>
+  <UN029_RecoveryBlocked>Im laufenden Zeitraum wurde ein negativer Zustand erfasst: keine Erholung bei der nächsten Bewertung. Strafen richten sich nach den dann vorliegenden Zuständen und bestehenden Schonfristen.</UN029_RecoveryBlocked>
+  <UN029_RecoveryPossible>Bisher kein erfasster Verstoß: nach drei sauberen Tagen +10 Erholung, höchstens bis 0. Neue Verstöße können dies noch ändern.</UN029_RecoveryPossible>
+  <UN029_PrisonRules>GEFÄNGNISSTRAFEN\nAktion oder Zustand|Punkte|Wann?\nMänner und Frauen in derselben Gefängniszelle|−10 insgesamt|Alle 3 Tage; unabhängig von der Anzahl betroffener Zellen oder Gefangener\nKein geeignetes Gefangenenbett, nur Schlafplatz oder Unterbringung im Freien|−2 pro Gefangenem|Alle 3 Tage\nNahrungsanzeige unter 25 %|−5 pro Gefangenem|Alle 3 Tage\nFehlendes erfasstes Körperteil ohne Ersatz|−5 pro Körperteil, höchstens −20 pro Gefangenem|Alle 3 Tage\nAktuell behandelbare, unbehandelte Krankheit bzw. sonstiger Nicht-Verletzungszustand|−5 pro Gefangenem|Alle 3 Tage; nicht pro Krankheit\nAktuell behandelbare, unbehandelte Verletzung|−3 pro Gefangenem|Alle 3 Tage; nicht pro Verletzung\nVom Spiel als unzulässig gemeldete Operation an einem Gefangenen durch einen Kolonisten|−15|Sofort pro gemeldetem Verstoß</UN029_PrisonRules>
+  <UN029_RecoveryRules>ERHOLUNG UND STARTGUNST\nSituation|Ergebnis\nDrei Tage ohne erfassten negativen Zustand und ohne gemeldeten akuten Verstoß|+10, aber nur bis 0\nKeine Gefangenen und im Zeitraum kein erfasster Verstoß|Ebenfalls Erholung um +10 bis höchstens 0\nGunst bereits bei 0 oder höher|Keine zusätzlichen Punkte durch gute Gefangenenversorgung\nNeue Partie|Zufällige Startgunst 0 bis +10, sofern die Ausgangsbeziehung neutral bei 0 liegt\nBestehender Spielstand|Vorhandene Gunst wird übernommen</UN029_RecoveryRules>
+  <UN029_AccessRules>ZUGANGSSCHWELLEN\nGunst|Bedeutung\n0|Schwelle für gewöhnliche UN-Aufträge\n+50|Schwelle für fortgeschrittene UN-Aufträge\n+75 und Bündnis|Verstärkung anforderbar, sofern die weiteren Einsatzbedingungen erfüllt sind\n+100 für 15 ununterbrochene Tage|Herstellung der UN-Ausrüstung wird freigeschaltet\n−50 oder schlechter|UN-Militärinterventionen beginnen; bei −100 regulär alle 3 Tage</UN029_AccessRules>
+</LanguageData>

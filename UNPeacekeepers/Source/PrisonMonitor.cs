@@ -64,6 +64,13 @@ namespace UNPeacekeepers
             if(recovery>0)UNContact.ApplyPrisonGoodwill(un,recovery,"UN_Recovery".Translate().ToString());
             negativeSinceAssessment=false;
         }
+        public string AssessmentStatus()
+        {
+            var prisoners=Prisoners();
+            bool negative=negativeSinceAssessment || HasMixedHousing(prisoners) || prisoners.Any(p=>Inspect(p,prisoners).Any(x=>x.Value<0));
+            return "UN029_Assessment".Translate(nextAssessment<0?3f:Math.Max(0,nextAssessment-Find.TickManager.TicksGame)/60000f,
+                (negative?"UN029_RecoveryBlocked":"UN029_RecoveryPossible").Translate()).ToString();
+        }
         public float DaysUntil(Pawn p)
         {
             int grace;
@@ -140,6 +147,7 @@ namespace UNPeacekeepers
                 refreshAt=now+250;prisoners=PrisonMonitor.Prisoners();statuses=prisoners.ToDictionary(p=>p,p=>PrisonMonitor.Inspect(p,prisoners));
             }
             Widgets.Label(new Rect(0,y,rect.width,25),"UN_Count".Translate(prisoners.Count));y+=28;
+            Widgets.Label(new Rect(0,y,rect.width,28),(PrisonMonitor.HasMixedHousing(prisoners)?"UN029_MixedBad":"UN029_MixedOK").Translate());y+=32;
             var history=mon?.Events.Take(15).ToList()??new List<string>();
             float w=rect.width-24; float height=prisoners.Count*92+history.Count*48+70;
             Widgets.BeginScrollView(new Rect(0,y,rect.width,rect.height-y-45),ref scroll,new Rect(0,0,w,height));
@@ -150,7 +158,7 @@ namespace UNPeacekeepers
                 Widgets.Label(new Rect(0,sy,w,24),p.LabelShortCap+"  |  "+p.gender.GetLabel()+"  |  "+"UN_Next".Translate((mon?.DaysUntil(p)??3f).ToString("0.00")));
                 if(p.needs?.food!=null) Widgets.Label(new Rect(0,sy+24,w,23),"UN_Condition".Translate(p.needs.food.CurLevelPercentage.ToStringPercent(),p.health.summaryHealth.SummaryHealthPercent.ToStringPercent()));
                 var result=statuses[p];
-                Widgets.Label(new Rect(0,sy+47,w,43),string.Join("; ",result.Select(r=>r.Key+" ("+r.Value.ToString("+0;-0;0")+")"))+(PrisonMonitor.IsMixed(p,prisoners)?"; "+"UN_MixedSummary".Translate():""));
+                Widgets.Label(new Rect(0,sy+47,w,43),string.Join("; ",result.Select(r=>r.Key+" ("+r.Value.ToString("+0;-0;0")+")")));
                 sy+=92;
             }
             if(prisoners.Count==0) { Widgets.Label(new Rect(0,sy,w,30),"UN_Empty".Translate());sy+=32; }

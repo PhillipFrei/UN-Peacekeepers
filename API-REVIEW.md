@@ -15,3 +15,18 @@ Inspected the project-supplied `sources/Assembly-CSharp.dll` locally with ILSpy 
 - `FactionGenerator` still creates required hidden factions and leaders but skips ordinary settlement generation for hidden factions. Existing settlements are not removed.
 
 Runtime acceptance checks still needed: load an existing save and compare goodwill/probation; gifted silver leaves goodwill unchanged; compare −10 mixed housing with two versus ten prisoners; save/reload halfway through the cycle and after acute surgery; check empty-prison recovery at −3 and +50; select a powered/unpowered console; contact UN at neutral/hostile/allied goodwill; attempt settlement conquest with the user's diplomacy mods; exercise scheduled raids and aid.
+
+
+# v0.2.9 API and compatibility review
+
+Inspected the supplied game assembly again with ILSpy and compiled against the unchanged 1.6.4871 reference package. Game code is not redistributed.
+
+- `Quest.MakeRaw()` allocates an ID and appearance tick. Set a real `QuestScriptDef` root before registering; cleanup dereferences `root.hideOnCleanup`. Both new defs have real roots and are excluded from random selection.
+- `QuestManager.Add` registers signal receivers before `Quest.Accept(pawn)` emits `InitiateSignal`. `QuestPartActivable` enables on that signal; `Quest.QuestTick` ticks enabled parts. The ten-day deadline also runs during delivery to reject boundary-time submissions.
+- `Quest.AddPart` assigns ownership; deep quest serialization restores the custom part. Base ExposeData preserves activation/signal fields; custom fields persist tier, delivered count and reward guard. Existing mod Scribe keys and defaults are unchanged.
+- `Quest.End(Success/Fail)` provides native completion/history/cleanup. One active supply part and acceptance-time history enforce shared tier limits. No new global save component or goodwill migration is introduced.
+- `Thing.SplitOff`, `Destroy(Vanish)`, spawned-map filtering, `IsForbidden` and `Pawn.CanReach` implement an explicit resource handover. Partial deliveries consume only needed goods. Reward guard is set before calling the existing `ApplyPrisonGoodwill` scoped API (its historical name is retained).
+- `CompGetGizmosExtra` is the standard ThingWithComps path. The XML patch adds one comp to CommsConsole, and three ungroupable local commands replace the previous Building postfix. This avoids depending on that broad patch and allows existing buildings to acquire the component during load. The reported missing settings button's precise mod-stack cause has not been reproduced live.
+- Prison inspection and penalty/recovery mutations, intervention formulas, UN isolation and equipment defs remain unchanged; report-only additions read existing state.
+
+Validation: compile, policy/lifecycle tests (partial stacks, save-state restoration, over-delivery, duplicate payout, exact expiry), XML/translation checks, original asset hashes and full ZIP validation. These are not a live engine integration test. Required in-game acceptance: load a copy of v0.2.8 save; compare goodwill/probation; select powered/unpowered existing console; check all three commands; use both order tiers; save/reload after partial delivery and after reward; test expiry, cancellation, insufficient/forbidden/unreachable goods, tier thresholds and unchanged external-goodwill blocking. No claim of live save or mod-stack compatibility verification.

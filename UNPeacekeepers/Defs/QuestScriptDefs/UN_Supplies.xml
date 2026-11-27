@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <QuestScriptDef><defName>UN_Supplies</defName><root Class="UNPeacekeepers.QuestNode_UNSupply"/><randomlySelectable>false</randomlySelectable><rootSelectionWeight>0</rootSelectionWeight><endOnColonyMove>false</endOnColonyMove></QuestScriptDef>
+  <QuestScriptDef><defName>UN_Advanced_Supplies</defName><root Class="UNPeacekeepers.QuestNode_UNSupply"><advanced>true</advanced></root><randomlySelectable>false</randomlySelectable><rootSelectionWeight>0</rootSelectionWeight><endOnColonyMove>false</endOnColonyMove></QuestScriptDef>
+</Defs>

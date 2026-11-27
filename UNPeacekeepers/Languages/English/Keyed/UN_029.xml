@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LanguageData>
+  <UN029_MixedBad>Gender separation: violation — −10 total per assessment (every 3 days).</UN029_MixedBad>
+  <UN029_MixedOK>Gender separation respected.</UN029_MixedOK>
+  <UN029_Status>Current situation</UN029_Status>
+  <UN029_Rules>Rules and thresholds</UN029_Rules>
+  <UN029_Goodwill>Current UN goodwill: {0}</UN029_Goodwill>
+  <UN029_Access>Access</UN029_Access>
+  <UN029_Active>A UN supply order is already active.</UN029_Active>
+  <UN029_Cooldown>New orders are available 3 days after the previous acceptance.</UN029_Cooldown>
+  <UN029_Deliver>Hand over available supplies now</UN029_Deliver>
+  <UN029_Cancel>Cancel order (delivered supplies are not returned)</UN029_Cancel>
+  <UN029_FoodTitle>UN order: Emergency rations</UN029_FoodTitle>
+  <UN029_MedicalTitle>UN order: Medical aid</UN029_MedicalTitle>
+  <UN029_Terms>Deliver {0} × {1} within 10 days. Reward: +{2} UN goodwill (capped at +100).\n\nContact the UN with a colonist using a communications console. Reopen this order tier and select “Hand over available supplies now”. Reachable, non-forbidden goods on this home map are consumed immediately. Partial deliveries are saved. Nothing is handed over automatically.\n\nOnly one UN order at a time; a new order can be accepted after 3 days. Cancellation or expiry does not refund supplies and does not penalize goodwill. Delivery is blocked while UN goodwill is negative.</UN029_Terms>
+  <UN029_Progress>Delivered: {0}/{1} · Time remaining: {2:0.0} days</UN029_Progress>
+  <UN029_Assessment>Next prison assessment in {0:0.00} days.\n{1}</UN029_Assessment>
+  <UN029_RecoveryBlocked>A negative condition was observed this period: no recovery at the next assessment. Penalties depend on conditions then and existing grace periods.</UN029_RecoveryBlocked>
+  <UN029_RecoveryPossible>No violation recorded so far: three clean days recover +10 up to 0 only. New violations can still block this.</UN029_RecoveryPossible>
+  <UN029_PrisonRules>PRISON PENALTIES\n\nMixed-gender cells: −10 total every 3 days, regardless of prisoners or cells.\n\nNo suitable prisoner bed, sleeping spot only or outdoors: −2 per prisoner every 3 days.\n\nFood below 25%: −5 per prisoner every 3 days.\n\nTracked missing body part without replacement: −5 per part, capped at −20 per prisoner every 3 days.\n\nCurrently tendable, untreated disease or other non-injury condition: −5 per prisoner every 3 days, not per disease.\n\nCurrently tendable, untreated injury: −3 per prisoner every 3 days, not per injury.\n\nColonist operation on a prisoner reported as unlawful by the game: −15 immediately per reported violation.</UN029_PrisonRules>
+  <UN029_RecoveryRules>RECOVERY AND STARTING GOODWILL\n\nThree days without a recorded negative condition or acute violation: +10, up to 0 only.\n\nNo prisoners and no recorded violation: also +10 recovery up to 0.\n\nAt 0 or above: good prison care awards no additional points.\n\nNew game: random starting goodwill 0 to +10 if the initial relationship is neutral at 0.\n\nExisting save: existing goodwill is preserved.</UN029_RecoveryRules>
+  <UN029_AccessRules>ACCESS THRESHOLDS\n\n0: ordinary UN orders.\n+50: advanced UN orders.\n+75 and allied: reinforcements if all other deployment conditions are met.\n+100 for 15 uninterrupted days: UN equipment manufacturing unlocks.\n−50 or worse: UN military interventions begin; normally every 3 days at −100.</UN029_AccessRules>
+</LanguageData>

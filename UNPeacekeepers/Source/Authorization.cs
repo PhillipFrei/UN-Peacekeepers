@@ -9,7 +9,7 @@ namespace UNPeacekeepers
     [StaticConstructorOnStartup]
     public static class Bootstrap
     {
-        static Bootstrap() { new Harmony("local.geneva.unpeacekeepers.authorization").PatchAll(); Log.Message("[UN Peacekeepers] Authorization 0.2.8 initialized."); }
+        static Bootstrap() { new Harmony("local.geneva.unpeacekeepers.authorization").PatchAll(); Log.Message("[UN Peacekeepers] Authorization 0.2.9 initialized."); }
     }
     public sealed class Authorization : GameComponent
     {

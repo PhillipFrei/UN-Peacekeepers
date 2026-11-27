@@ -195,25 +195,7 @@ namespace UNPeacekeepers
             static DiaOption Back(Pawn pawn,Faction f)=>new DiaOption("GoBack".Translate()){linkLateBind=()=>FactionDialogMaker.FactionDialogFor(pawn,f)};
             static DiaOption AssignmentOption(Pawn pawn,Faction f,bool advanced)
             {
-                int threshold=UNRules.AssignmentThreshold(advanced);
-                var option=new DiaOption((advanced?"UN_AdvancedAssignments":"UN_OrdinaryAssignments").Translate());
-                if(f.PlayerGoodwill<threshold){option.Disable("UN_AssignmentLow".Translate(threshold));return option;}
-                var offers=Find.QuestManager.QuestsListForReading.Where(q=>!q.hidden&&!q.hiddenInUI&&q.State==QuestState.NotYetAccepted&&q.root!=null&&q.root.defName.StartsWith("UN_",StringComparison.Ordinal)&&q.root.defName.StartsWith("UN_Advanced_",StringComparison.Ordinal)==advanced).ToList();
-                if(offers.Count==0){option.Disable("UN_NoGenerator".Translate());return option;}
-                var node=new DiaNode("UN_C_QuestIntro".Translate());
-                foreach(var q in offers)
-                {
-                    var current=q;
-                    var detail=new DiaNode(current.description);
-                    var accept=new DiaOption("UN_C_Accept".Translate()){resolveTree=true,action=()=>{
-                        if(f.PlayerGoodwill>=threshold && current.State==QuestState.NotYetAccepted && !current.RequiresAccepter)current.Accept(null);
-                        else Messages.Message("UN_C_QuestChanged".Translate(),MessageTypeDefOf.RejectInput,false);
-                    }};
-                    if(current.RequiresAccepter)accept.Disable("UN_C_QuestNeedsPawn".Translate());
-                    detail.options.Add(accept);detail.options.Add(Back(pawn,f));
-                    node.options.Add(new DiaOption(current.name){link=detail});
-                }
-                node.options.Add(Back(pawn,f));option.link=node;return option;
+                return UNSupplyOrders.Option(pawn,f,advanced);
             }
             static void Postfix(Pawn __0,Faction __1,DiaNode __result)
             {
@@ -237,26 +219,58 @@ namespace UNPeacekeepers
     public sealed class Dialog_UNJournal:Window
     {
         private Vector2 scroll;
-        public override Vector2 InitialSize=>new Vector2(850,650);
+        private int page;
+        private static float ColumnWidth(float width,int count,int index)
+        {return count==3?width*(index==0?0.48f:index==1?0.22f:0.30f):count==2?width*(index==0?0.42f:0.58f):width;}
+        public override Vector2 InitialSize=>new Vector2(900,700);
         public Dialog_UNJournal(){doCloseX=true;doCloseButton=true;absorbInputAroundWindow=true;}
         public override void DoWindowContents(Rect rect)
         {
             var un=Authorization.GetUN();var comp=UNContact.Instance;
             Text.Font=GameFont.Medium;
-            Widgets.Label(new Rect(0,0,rect.width,30),"UN_C_Report".Translate());
+            Widgets.Label(new Rect(0,0,rect.width,36),"UN_C_Report".Translate());
             Text.Font=GameFont.Small;
-            Widgets.Label(new Rect(0,34,rect.width,25),"UN_StatusLine".Translate(un==null?"—":un.PlayerGoodwill.ToString(),un?.leader?.LabelShortCap.ToString()??"—",Authorization.Granted?"UN_Yes".Translate():"UN_No".Translate()));
-            Widgets.Label(new Rect(0,62,rect.width,25),comp?.RaidStatus(un)??"—");
-            Widgets.Label(new Rect(0,90,rect.width,42),comp?.RaidStrengthStatus(un)??"—");
-            Widgets.Label(new Rect(0,135,rect.width,72),"UN_ProgressionInfo".Translate());
-            Widgets.Label(new Rect(0,210,rect.width,25),"UN_C_HistoryTitle".Translate());
-            var entries=comp?.Entries.ToList()??new List<string>();
-            float width=rect.width-22;
-            var heights=entries.Select(e=>Math.Max(28,Text.CalcHeight(e,width-8)+8)).ToList();
-            Widgets.BeginScrollView(new Rect(0,240,rect.width,rect.height-290),ref scroll,new Rect(0,0,width,Math.Max(35,heights.Sum())));
+            for(int i=0;i<3;i++)
+                if(Widgets.ButtonText(new Rect(i*rect.width/3,42,rect.width/3-5,30),(i==0?"UN029_Status":i==1?"UN029_Rules":"UN_C_HistoryTitle").Translate())){page=i;scroll=Vector2.zero;}
+            var lines=new List<string>();
+            if(page==0)
+            {
+                lines.Add("UN029_Goodwill".Translate(un==null?"—":un.PlayerGoodwill.ToString("+0;-0;0")));
+                lines.Add(comp?.RaidStatus(un)??"—");
+                lines.Add(comp?.RaidStrengthStatus(un)??"—");
+                lines.Add(PrisonMonitor.Instance?.AssessmentStatus()??"—");
+                lines.Add("UN029_Access".Translate());
+                int g=un?.PlayerGoodwill??-100;
+                lines.Add("UN_OrdinaryAssignments".Translate()+": "+(g>=0?"UN_Yes":"UN_No").Translate()+" (0)");
+                lines.Add("UN_AdvancedAssignments".Translate()+": "+(g>=50?"UN_Yes":"UN_No").Translate()+" (+50)");
+                lines.Add("UN_C_Aid".Translate()+": "+(comp?.AidBlock(un,Find.CurrentMap)??"UN_Yes".Translate().ToString()));
+                lines.Add("UN_StatusLine".Translate(un==null?"—":g.ToString(),un?.leader?.LabelShortCap.ToString()??"—",Authorization.Granted?"UN_Yes".Translate():"UN_No".Translate()));
+                lines.Add("UN_DaysLine".Translate((Authorization.Instance?.ProgressDays??0f).ToString("0.0")));
+                lines.AddRange("UN029_AccessRules".Translate().ToString().Split('\n'));
+                if(UNSupplyOrders.Active!=null)lines.Add(UNSupplyOrders.Active.DescriptionPart);
+            }
+            else if(page==1)
+            {
+                lines.AddRange("UN029_PrisonRules".Translate().ToString().Split('\n'));
+                lines.AddRange("UN029_RecoveryRules".Translate().ToString().Split('\n'));
+                lines.AddRange("UN029_AccessRules".Translate().ToString().Split('\n'));
+            }
+            else lines.AddRange(comp?.Entries??new[]{"UN_C_Empty".Translate().ToString()});
+            float width=rect.width-24;
+            var heights=lines.Select(e=>e.Split('|').Select((cell,j)=>Text.CalcHeight(cell,ColumnWidth(width,e.Split('|').Length,j)-16)+18).Max()).ToList();
+            Widgets.BeginScrollView(new Rect(0,84,rect.width,rect.height-134),ref scroll,new Rect(0,0,width,Math.Max(35,heights.Sum())));
             float y=0;
-            if(entries.Count==0)Widgets.Label(new Rect(0,0,width,30),"UN_C_Empty".Translate());
-            for(int i=0;i<entries.Count;i++){Widgets.Label(new Rect(0,y,width-8,heights[i]),entries[i]);y+=heights[i];}
+            for(int i=0;i<lines.Count;i++)
+            {
+                if(i%2==0)Widgets.DrawHighlight(new Rect(0,y,width,heights[i]));
+                var cells=lines[i].Split('|');float x=0;
+                for(int j=0;j<cells.Length;j++)
+                {
+                    float cw=ColumnWidth(width,cells.Length,j);
+                    Widgets.Label(new Rect(x+8,y+6,cw-16,heights[i]-6),cells[j]);x+=cw;
+                }
+                y+=heights[i];
+            }
             Widgets.EndScrollView();
         }
     }

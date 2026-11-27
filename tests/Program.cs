@@ -30,6 +30,23 @@ class Program
         }
         Check(Math.Abs(UNRules.InterventionMultiplier(-57)-(1.5f+7f/15f*0.5f))<0.0001f,"Linear interpolation");
         Check(UNRules.InterventionDays(-95)==3.5f,"Linear days interpolation");
-        Console.WriteLine("All recovery, housing, assignments and intervention rule assertions passed.");
+        foreach(int required in new[]{30,40})
+        {
+            var delivery=new UNSupplyProgress();
+            Check(!delivery.TryClaim(required),"No reward without goods");
+            foreach(int stack in new[]{7,0,12})delivery.Delivered+=delivery.TakeCount(required,stack);
+            Check(delivery.Delivered==19 && !delivery.TryClaim(required),"Partial delivery does not pay");
+            // Simulate a save/reload using the two persisted values.
+            delivery=new UNSupplyProgress{Delivered=delivery.Delivered,Rewarded=delivery.Rewarded};
+            int take=delivery.TakeCount(required,75);
+            Check(take==required-19,"Only the missing goods are removed after reload");
+            delivery.Delivered+=take;
+            Check(delivery.TryClaim(required),"Completed objective pays");
+            Check(!delivery.TryClaim(required) && delivery.TakeCount(required,75)==0,"Repeated callback cannot pay or consume again");
+            delivery=new UNSupplyProgress{Delivered=delivery.Delivered,Rewarded=delivery.Rewarded};
+            Check(!delivery.TryClaim(required),"Reward guard survives reload");
+        }
+        Check(!UNSupplyProgress.Expired(599999) && UNSupplyProgress.Expired(600000),"Deadline boundary");
+        Console.WriteLine("All recovery, housing, assignment, intervention and supply lifecycle assertions passed.");
     }
 }
