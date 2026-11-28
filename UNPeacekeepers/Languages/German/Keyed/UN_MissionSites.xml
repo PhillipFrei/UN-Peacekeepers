@@ -42,7 +42,7 @@
   <UNMS_Goal1>Heile alle Patienten von akuten Verletzungen und heilbaren Infektionen/Krankheiten. Keine Raum-, Temperatur- oder Bettvorgaben. Vor Ort genesene Patienten zählen bei Questabschluss; zur Heimatkarte transportierte Patienten bleiben nach vollständiger Genesung einen Spieltag als Gäste und reisen sicher ab. Beide Behandlungswege dürfen kombiniert werden.</UNMS_Goal1>
   <UNMS_Goal2>Übernimm alle zugewiesenen Zivilisten am Übergabepunkt. Bringe sie lebend zur Heimatkarte, stille Blutungen und warte das Ende der Narkose ab. Jeder bleibt einen Spieltag als Gast; alle müssen sicher abreisen.</UNMS_Goal2>
   <UNMS_Goal3>Befreie alle zugewiesenen Gefangenen nach Ausschaltung der Wachen. Bringe sie lebend zur Heimatkarte und stabilisiere sie. Jeder bleibt einen Spieltag als Gast; alle müssen sicher abreisen.</UNMS_Goal3>
-  <UNMS_Goal4>Halte alle zugewiesenen Zivilisten und den markierten Übergabepunkt für die gesamte angegebene Schutzdauer am Leben; besiege oder entwaffne alle zugewiesenen Angreifer.</UNMS_Goal4>
+  <UNMS_Goal4>Halte alle zugewiesenen Zivilisten und den markierten Übergabepunkt für die gesamte angegebene Schutzdauer am Leben; schalte alle zugewiesenen Angreifer aus: kampfunfähig, gefangen oder nachweislich geflohen.</UNMS_Goal4>
   <UNMS_Goal5>Schütze alle zugewiesenen Zivilisten und den markierten Übergabepunkt über die gesamte Schutzdauer und schlage alle zugewiesenen Angreifer zurück. Unterstützte Fraktion und UN stellen lokale Verteidiger.</UNMS_Goal5>
   <UNMS_Goal6>Nimm den genau benannten lebenden Fraktionsanführer gefangen, halte ihn am Leben, transportiere ihn nach Hause, stille Blutungen und verlade ihn in das UN-Abholshuttle. Der Tod der Zielperson lässt den Auftrag scheitern.</UNMS_Goal6>
   <UNMS_TakeCustody>Zielpersonen zur Evakuierung übernehmen</UNMS_TakeCustody>
@@ -76,4 +76,34 @@
   <UNMED_FieldHeld>Am Einsatzort – aus Transport/Tragezustand entlassen</UNMED_FieldHeld>
   <UNMED_Transport>Zur Heimatkarte bringen – dort Behandlung und Gästezeit abschließen</UNMED_Transport>
   <UNMED_BionicFallback>Der bionische Sonderfall konnte nicht sicher vorbereitet werden. Stattdessen gilt ein normaler medizinischer Einsatz.</UNMED_BionicFallback>
+  <UNMIL_DefenseDuration>Vorgeschriebene Schutzdauer: {0}</UNMIL_DefenseDuration>
+  <UNMIL_DefenseNotStarted>Schutzzeit beginnt beim Betreten des Einsatzortes.</UNMIL_DefenseNotStarted>
+  <UNMIL_DefenseRemaining>Verbleibende Schutzzeit: {0}</UNMIL_DefenseRemaining>
+  <UNMIL_DefenseDone>Schutzzeit erfüllt; übrige Ziele müssen ebenfalls erfüllt sein.</UNMIL_DefenseDone>
+  <UNMIL_Protected>Zivilisten am Einsatzort: {0}/{1} | Übergabepunkt: {2}</UNMIL_Protected>
+  <UNMIL_Intact>intakt</UNMIL_Intact>
+  <UNMIL_NotIntact>nicht intakt / nicht am Einsatzort</UNMIL_NotIntact>
+  <UNMIL_Enemies>Ausgeschaltete Gegner: {0}/{1} | Noch offen: {2}</UNMIL_Enemies>
+  <UNMIL_RosterUnknown>Gegnerliste nicht vollständig nachweisbar; fehlende Personen zählen nicht automatisch als besiegt.</UNMIL_RosterUnknown>
+  <UNMIL_Rescued>Befreite Zielpersonen: {0}/{1}</UNMIL_Rescued>
+  <UNMIL_NextProtectPeople>Alle zugewiesenen Zivilisten am Einsatzort schützen.</UNMIL_NextProtectPeople>
+  <UNMIL_NextEnemies>Verbliebene Angreifer kampfunfähig machen, gefangen nehmen oder nachweislich vertreiben.</UNMIL_NextEnemies>
+  <UNMIL_NextHold>Schutzdauer abwarten; Zivilisten und Übergabepunkt weiterhin schützen.</UNMIL_NextHold>
+  <UNMIL_TargetMissing>Zielperson fehlt oder ist verstorben.</UNMIL_TargetMissing>
+  <UNMIL_EliteCapture>{0} lebend gefangen nehmen.</UNMIL_EliteCapture>
+  <UNMIL_EliteHome>{0} als Gefangenen zur Heimatkarte bringen.</UNMIL_EliteHome>
+  <UNMIL_EliteStabilize>{0}: Blutung, Narkose und Gefangenenstatus prüfen; stabilisieren.</UNMIL_EliteStabilize>
+  <UNMIL_EliteReleaseTransport>{0} auf der Heimatkarte aus dem Transport entlassen.</UNMIL_EliteReleaseTransport>
+  <UNMIL_EliteRequest>{0} stabil – Abholshuttle abwarten.</UNMIL_EliteRequest>
+  <UNMIL_EliteIncoming>Abholshuttle für {0} angefordert / im Anflug.</UNMIL_EliteIncoming>
+  <UNMIL_EliteLoad>Abholshuttle gelandet – {0} verladen.</UNMIL_EliteLoad>
+  <UNMIL_EliteBoarded>{0} an Bord – tatsächlichen Abflug abwarten.</UNMIL_EliteBoarded>
+  <UNMIL_PickupRetry>Nächster möglicher Shuttle-Anforderungsversuch in {0}.</UNMIL_PickupRetry>
+  <UNMIL_PickupTitle>UN-Abholshuttle angefordert</UNMIL_PickupTitle>
+  <UNMIL_PickupBody>Für „{0}“ wurde ein Abholshuttle angefordert. Erforderliche Zielperson verladen und Abflug abwarten.</UNMIL_PickupBody>
+  <UNMIL_PickupUnverified>Abreise der erforderlichen Zielperson nicht vollständig bestätigt.</UNMIL_PickupUnverified>
+  <UNMIL_UltimatumBoarded>Anführer an Bord – Abflug vor Fristablauf abwarten.</UNMIL_UltimatumBoarded>
+  <UNMIL_UltimatumLanded>Shuttle gelandet – ausgewählten Anführer verladen.</UNMIL_UltimatumLanded>
+  <UNMIL_UltimatumIncoming>Abholshuttle angefordert / im Anflug.</UNMIL_UltimatumIncoming>
+  <UNMIL_UltimatumRequest>Anführer auf Heimatkarte – Shuttle-Anforderung abwarten.</UNMIL_UltimatumRequest>
 </LanguageData>

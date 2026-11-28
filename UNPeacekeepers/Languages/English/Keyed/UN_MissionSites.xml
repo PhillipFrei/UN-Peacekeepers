@@ -42,7 +42,7 @@
   <UNMS_Goal1>Heal every patient of acute injuries and curable infections/diseases. No room, temperature or bed requirements. Recovered field patients count at quest completion; patients transported home each stay as guests for one game day after full recovery, then depart safely. Both treatment routes may be combined.</UNMS_Goal1>
   <UNMS_Goal2>Take temporary responsibility for every assigned civilian at the handover point. Bring them home alive, stop bleeding and wait for anesthesia to wear off. Each stays as a guest for one game day; all must depart safely.</UNMS_Goal2>
   <UNMS_Goal3>Free every assigned prisoner after the guards are defeated or incapacitated. Bring them home alive and stabilize them. Each stays as a guest for one game day; all must depart safely.</UNMS_Goal3>
-  <UNMS_Goal4>Keep every assigned civilian and the marked handover point alive for the entire stated defense period, then defeat/incapacitate all assigned attackers.</UNMS_Goal4>
+  <UNMS_Goal4>Keep every assigned civilian and the marked handover point alive for the entire stated defense period, and neutralize every assigned attacker: incapacitated, captured or confirmed departed.</UNMS_Goal4>
   <UNMS_Goal5>Protect all assigned civilians and the marked handover point through the defense period and repel every assigned attacker. The supported faction and UN provide local defenders.</UNMS_Goal5>
   <UNMS_Goal6>Capture the exact named living faction leader, keep them alive, transport them home, stop bleeding and board the UN pickup shuttle. Killing the target fails the mission.</UNMS_Goal6>
   <UNMS_TakeCustody>Take custody for evacuation</UNMS_TakeCustody>
@@ -76,4 +76,34 @@
   <UNMED_FieldHeld>At the site – release from transport/carrying</UNMED_FieldHeld>
   <UNMED_Transport>Bring to the home map – complete treatment and guest stay there</UNMED_Transport>
   <UNMED_BionicFallback>The bionic case could not be prepared safely. A normal medical mission applies instead.</UNMED_BionicFallback>
+  <UNMIL_DefenseDuration>Required defense duration: {0}</UNMIL_DefenseDuration>
+  <UNMIL_DefenseNotStarted>Defense timer starts on entering the site.</UNMIL_DefenseNotStarted>
+  <UNMIL_DefenseRemaining>Defense time remaining: {0}</UNMIL_DefenseRemaining>
+  <UNMIL_DefenseDone>Defense duration complete; other objectives still required.</UNMIL_DefenseDone>
+  <UNMIL_Protected>Civilians at site: {0}/{1} | Handover point: {2}</UNMIL_Protected>
+  <UNMIL_Intact>intact</UNMIL_Intact>
+  <UNMIL_NotIntact>not intact / not at site</UNMIL_NotIntact>
+  <UNMIL_Enemies>Neutralized enemies: {0}/{1} | Remaining: {2}</UNMIL_Enemies>
+  <UNMIL_RosterUnknown>Enemy roster not fully verified; missing people do not count as defeated.</UNMIL_RosterUnknown>
+  <UNMIL_Rescued>Released targets: {0}/{1}</UNMIL_Rescued>
+  <UNMIL_NextProtectPeople>Protect every assigned civilian at the site.</UNMIL_NextProtectPeople>
+  <UNMIL_NextEnemies>Incapacitate, capture or verifiably drive off the remaining attackers.</UNMIL_NextEnemies>
+  <UNMIL_NextHold>Wait for the defense duration; continue protecting civilians and the handover point.</UNMIL_NextHold>
+  <UNMIL_TargetMissing>Target missing or deceased.</UNMIL_TargetMissing>
+  <UNMIL_EliteCapture>Capture {0} alive.</UNMIL_EliteCapture>
+  <UNMIL_EliteHome>Bring {0} to the home map as a prisoner.</UNMIL_EliteHome>
+  <UNMIL_EliteStabilize>{0}: check bleeding, anesthesia and prisoner status; stabilize.</UNMIL_EliteStabilize>
+  <UNMIL_EliteReleaseTransport>Release {0} from transport on the home map.</UNMIL_EliteReleaseTransport>
+  <UNMIL_EliteRequest>{0} stabilized – await pickup shuttle.</UNMIL_EliteRequest>
+  <UNMIL_EliteIncoming>Pickup shuttle for {0} requested / inbound.</UNMIL_EliteIncoming>
+  <UNMIL_EliteLoad>Pickup shuttle landed – load {0}.</UNMIL_EliteLoad>
+  <UNMIL_EliteBoarded>{0} aboard – wait for actual departure.</UNMIL_EliteBoarded>
+  <UNMIL_PickupRetry>Next possible shuttle request attempt in {0}.</UNMIL_PickupRetry>
+  <UNMIL_PickupTitle>UN pickup shuttle requested</UNMIL_PickupTitle>
+  <UNMIL_PickupBody>Pickup shuttle requested for “{0}”. Load the required target and await departure.</UNMIL_PickupBody>
+  <UNMIL_PickupUnverified>Departure of the required target was not fully verified.</UNMIL_PickupUnverified>
+  <UNMIL_UltimatumBoarded>Leader aboard – await departure before deadline.</UNMIL_UltimatumBoarded>
+  <UNMIL_UltimatumLanded>Shuttle landed – load selected leader.</UNMIL_UltimatumLanded>
+  <UNMIL_UltimatumIncoming>Pickup shuttle requested / inbound.</UNMIL_UltimatumIncoming>
+  <UNMIL_UltimatumRequest>Leader on home map – awaiting shuttle request.</UNMIL_UltimatumRequest>
 </LanguageData>

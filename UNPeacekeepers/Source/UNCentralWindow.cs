@@ -177,6 +177,8 @@ namespace UNPeacekeepers
                 if(mission!=null)
                 {
                     Label(width,ref y,UNQuestDisplay.Header(quest,mission.RemainingTicks),Muted);
+                    var militarySummary=mission.MilitarySummary();
+                    if(!militarySummary.NullOrEmpty())Label(width,ref y,militarySummary,Muted);
                     var medicalSummary=mission.MedicalSummary();
                     if(!medicalSummary.NullOrEmpty())Label(width,ref y,medicalSummary,Muted);
                     var guestSummary=mission.GuestSummary();

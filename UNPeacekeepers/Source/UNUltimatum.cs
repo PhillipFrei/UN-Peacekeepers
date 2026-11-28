@@ -112,6 +112,22 @@ namespace UNPeacekeepers
     {
         public Pawn target;public int deadline,failureReason;public bool resolved;
         TransportShip shuttle;int nextShuttle;bool satisfied;
+        bool launchBoarded,launchBeforeDeadline;
+        string PickupStatus()
+        {
+            if(target==null)return "UNQ_NextLeader".Translate();
+            if(target.Dead)return "UNMIL_TargetMissing".Translate();
+            if(shuttle!=null)
+            {
+                if(shuttle.TransporterComp?.innerContainer.Contains(target)==true)return "UNMIL_UltimatumBoarded".Translate();
+                return (shuttle.ShipExistsAndIsSpawned?"UNMIL_UltimatumLanded":"UNMIL_UltimatumIncoming").Translate();
+            }
+            if(target.MapHeld?.IsPlayerHome!=true)return "UNQ_NextUltimatumHome".Translate();
+            if(!target.Spawned)return "UNMIL_EliteReleaseTransport".Translate(target.LabelShortCap);
+            int now=Find.TickManager.TicksGame;
+            return now<nextShuttle?"UNMIL_PickupRetry".Translate(UNQuestDisplay.Time(UNMissionPolicy.TicksUntil(nextShuttle,now))).ToString():
+                "UNMIL_UltimatumRequest".Translate().ToString();
+        }
         string Tag=>"UNUltimatum"+quest.id;
         public override string DescriptionPart
         {
@@ -122,7 +138,7 @@ namespace UNPeacekeepers
                 if(quest.State==QuestState.EndedFailed)return header+"\n"+UNQuestDisplay.Failed((UNMissionFailure)failureReason);
                 if(quest.State!=QuestState.Ongoing)return header;
                 return header+"\n"+"UNQ_UltimatumTarget".Translate(target?.LabelShortCap.ToString()??"UNCrime_NoLeader".Translate().ToString())+
-                    "\n"+UNQuestDisplay.Next((target==null?"UNQ_NextLeader":shuttle==null?"UNQ_NextUltimatumHome":"UNQ_NextShuttle").Translate());
+                    "\n"+UNQuestDisplay.Next(PickupStatus());
             }
         }
         public override void ExposeData(){base.ExposeData();Scribe_References.Look(ref target,"target");Scribe_Values.Look(ref deadline,"deadline");Scribe_Values.Look(ref resolved,"resolved");Scribe_Values.Look(ref failureReason,"unFailureReason",0);Scribe_References.Look(ref shuttle,"shuttle");Scribe_Values.Look(ref nextShuttle,"nextShuttle");Scribe_Values.Look(ref satisfied,"satisfied",false);}
@@ -130,18 +146,38 @@ namespace UNPeacekeepers
         {
             base.QuestPartTick();if(resolved)return;int now=Find.TickManager.TicksGame;
             if(now>=deadline||target?.Dead==true){UNUltimatum.Instance?.Fail(this,now>=deadline?UNMissionFailure.Deadline:UNMissionFailure.TargetLost);return;}
+            if(shuttle!=null&&shuttle.shipThing.Destroyed)
+            {
+                // Lost pickup without the leader: request a replacement if the leader is safe.
+                shuttle=null;satisfied=false;nextShuttle=now+UNMissionPolicy.GuestPickupRetryTicks;
+            }
             if(shuttle==null&&target?.Spawned==true&&target.Map.IsPlayerHome&&now>=nextShuttle)
-            {nextShuttle=now+2500;UNMissionSites.TryPickup(target.Map,new List<Pawn>{target},Tag,out shuttle);}
+            {
+                nextShuttle=now+UNMissionPolicy.GuestPickupRetryTicks;satisfied=false;
+                if(UNMissionSites.TryPickup(target.Map,new List<Pawn>{target},Tag,out shuttle))
+                    Find.LetterStack.ReceiveLetter("UNMIL_PickupTitle".Translate(),"UNMIL_PickupBody".Translate(quest.name),LetterDefOf.NeutralEvent,target);
+            }
         }
         public override void Notify_QuestSignalReceived(Signal signal)
         {
             base.Notify_QuestSignalReceived(signal);
             if(signal.tag==Tag+".SentSatisfied"&&!resolved&&Find.TickManager.TicksGame<deadline&&target!=null&&!target.Dead&&shuttle?.TransporterComp?.innerContainer.Contains(target)==true)satisfied=true;
         }
+        public void PrepareLaunch(TransportShip departing)
+        {
+            if(resolved||departing!=shuttle)return;
+            launchBeforeDeadline=Find.TickManager.TicksGame<deadline;
+            launchBoarded=target!=null&&!target.Dead&&shuttle?.TransporterComp?.innerContainer.Contains(target)==true;
+        }
         public void NotifyDeparted(TransportShip departed)
         {
-            if(!resolved&&departed==shuttle&&satisfied&&target!=null&&!target.Dead&&Find.TickManager.TicksGame<deadline)
+            if(resolved||departed!=shuttle)return;
+            if(UNMissionPolicy.DirectPickupComplete(launchBeforeDeadline&&Find.TickManager.TicksGame<deadline,
+                target!=null&&!target.Dead,launchBoarded,true,satisfied))
                 UNUltimatum.Instance?.Surrender(this);
+            else if(Find.TickManager.TicksGame>=deadline)UNUltimatum.Instance?.Fail(this,UNMissionFailure.Deadline);
+            else if(launchBoarded)UNUltimatum.Instance?.Fail(this,UNMissionFailure.PickupUnverified);
+            else {shuttle=null;satisfied=false;}
         }
         public override void Cleanup()
         {

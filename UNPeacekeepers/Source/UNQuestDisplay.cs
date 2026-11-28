@@ -8,7 +8,7 @@ namespace UNPeacekeepers
     public enum UNMissionFailure
     {
         Unknown=0, Deadline=1, TargetLost=2, DestinationLost=3, ProtectionLost=4,
-        ShuttleLost=5, Cancelled=6, Technical=7, AcceptanceInvalid=8, GuestDepartureUnverified=9
+        ShuttleLost=5, Cancelled=6, Technical=7, AcceptanceInvalid=8, GuestDepartureUnverified=9, PickupUnverified=10
     }
     public static class UNQuestDisplay
     {
@@ -54,6 +54,7 @@ namespace UNPeacekeepers
                 case UNMissionFailure.Technical:return "UNQ_ReasonTechnical".Translate();
                 case UNMissionFailure.AcceptanceInvalid:return "UNQ_ReasonAcceptance".Translate();
                 case UNMissionFailure.GuestDepartureUnverified:return "UNG_ReasonUnverified".Translate();
+                case UNMissionFailure.PickupUnverified:return "UNMIL_PickupUnverified".Translate();
                 default:return "UNQ_ReasonUnknown".Translate();
             }
         }

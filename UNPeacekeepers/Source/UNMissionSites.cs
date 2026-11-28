@@ -265,6 +265,19 @@ namespace UNPeacekeepers
                 __state.ConfirmGuestDeparture(__instance);
         }
     }
+    // A vanished pawn reference is not proof of flight. Observe the actual map exit.
+    [HarmonyPatch(typeof(Pawn),nameof(Pawn.ExitMap))]
+    internal static class UNEnemyDeparture
+    {
+        static void Prefix(Pawn __instance,out List<UNMissionObjective> __state)
+        {__state=UNMissionSites.Active.Where(o=>o.MayRecordEnemyExit(__instance)).ToList();}
+        static void Postfix(Pawn __instance,List<UNMissionObjective> __state)
+        {
+            if(__instance.Dead||__instance.Spawned||!Find.WorldPawns.Contains(__instance)||
+                __instance.IsCaravanMember()||__instance.ParentHolder!=null)return;
+            foreach(var o in __state)o.RecordEnemyExit(__instance);
+        }
+    }
     [HarmonyPatch(typeof(RecruitUtility),nameof(RecruitUtility.Recruit))]
     internal static class UNGuestRecruitment
     {
@@ -335,6 +348,7 @@ namespace UNPeacekeepers
             if(kind==1&&generated&&bionicCase&&(patientCount!=1||requiredLimbIndex<0||string.IsNullOrEmpty(requiredBionic)||
                 DefDatabase<HediffDef>.GetNamedSilentFail(requiredBionic)==null))return false;
             RememberMedicalHomePatients();
+            UpdateEnemyRoster();
             return true;
         }
         public void RequestCompletion(bool success,UNMissionFailure reason=UNMissionFailure.Unknown)=>Finish(success,reason);
@@ -343,6 +357,92 @@ namespace UNPeacekeepers
         private int began=-1,nextPoll,failureReason;
         public UNMissionFailure FailureReason=>(UNMissionFailure)failureReason;
         private TransportShip shuttle;
+        private HashSet<string> enemyIds=new HashSet<string>(),enemyDeaths=new HashSet<string>(),enemyExits=new HashSet<string>();
+        private bool enemyRosterRecorded,enemyRosterUncertain;
+        private int nextElitePickupAttempt;
+        private bool directLaunchBoarded,directLaunchEligible,directLaunchBeforeDeadline;
+        bool TracksEnemies=>kind==3||kind==4||kind==5;
+        bool DefenseMission=>kind==4||kind==5;
+        public bool MayRecordEnemyExit(Pawn pawn)=>TracksEnemies&&generated&&!finished&&pawn!=null&&pawn.Spawned&&pawn.Map==destination?.Map&&enemies.Contains(pawn);
+        public void RecordEnemyExit(Pawn pawn)
+        {
+            if(!finished&&TracksEnemies&&pawn!=null&&enemies.Contains(pawn))
+            {enemyIds.Add(pawn.ThingID);enemyExits.Add(pawn.ThingID);}
+        }
+        void UpdateEnemyRoster()
+        {
+            if(!TracksEnemies||!generated)return;
+            if(!enemyRosterRecorded)
+            {
+                enemyRosterUncertain|=enemies.Any(p=>p==null);
+                enemyRosterRecorded=true;
+            }
+            foreach(var p in enemies.Where(p=>p!=null))
+            {
+                enemyIds.Add(p.ThingID);
+                if(p.Dead)enemyDeaths.Add(p.ThingID);
+                if(p.MapHeld!=null&&p.MapHeld==destination?.Map)enemyExits.Remove(p.ThingID);
+            }
+        }
+        bool EnemyResolved(string id)
+        {
+            var p=enemies.FirstOrDefault(e=>e!=null&&e.ThingID==id);
+            bool returned=p!=null&&p.MapHeld!=null&&p.MapHeld==destination?.Map;
+            return UNMissionPolicy.EnemyNeutralized(true,enemyDeaths.Contains(id)||p?.Dead==true,p?.Downed==true,
+                p?.IsPrisonerOfColony==true,enemyExits.Contains(id),returned);
+        }
+        bool AllEnemiesResolved=>enemyRosterRecorded&&!enemyRosterUncertain&&enemyIds.All(EnemyResolved);
+        int DefenseTicksLeft=>UNMissionPolicy.DefenseRemaining(began,defenceTicks,Find.TickManager.TicksGame);
+        bool ProtectedPeopleSafe=>patientCount>0&&targets.Count==patientCount&&targets.All(p=>p!=null&&!p.Dead&&p.Spawned&&p.Map==destination?.Map);
+        bool ProtectedStructureSafe=>protectedThings.Count>0&&protectedThings.All(t=>t!=null&&!t.Destroyed&&t.Spawned&&t.Map==destination?.Map);
+        bool EliteEligible(Pawn p)=>p!=null&&!p.Dead&&p.IsPrisonerOfColony&&GuestHealthy(p);
+        Pawn EliteTarget=>targets.Count==1?targets[0]:null;
+        string EliteStatus()
+        {
+            var p=EliteTarget;
+            if(p==null||p.Dead)return "UNMIL_TargetMissing".Translate();
+            if(shuttle!=null)
+            {
+                if(!EliteEligible(p))return "UNMIL_EliteStabilize".Translate(p.LabelShortCap);
+                if(OnPickupShuttle(p))return "UNMIL_EliteBoarded".Translate(p.LabelShortCap);
+                if(!PickupLanded)return "UNMIL_EliteIncoming".Translate(p.LabelShortCap);
+                return "UNMIL_EliteLoad".Translate(p.LabelShortCap);
+            }
+            if(!p.IsPrisonerOfColony)return "UNMIL_EliteCapture".Translate(p.LabelShortCap);
+            if(!OnHomeHeld(p))return "UNMIL_EliteHome".Translate(p.LabelShortCap);
+            if(!EliteEligible(p))return "UNMIL_EliteStabilize".Translate(p.LabelShortCap);
+            if(!p.Spawned)return "UNMIL_EliteReleaseTransport".Translate(p.LabelShortCap);
+            if(Find.TickManager.TicksGame<nextElitePickupAttempt)
+                return "UNMIL_PickupRetry".Translate(UNQuestDisplay.Time(UNMissionPolicy.TicksUntil(nextElitePickupAttempt,Find.TickManager.TicksGame)));
+            return "UNMIL_EliteRequest".Translate(p.LabelShortCap);
+        }
+        public string MilitarySummary()
+        {
+            if(kind<3||finished)return null;
+            if(kind==6)return generated?EliteStatus():null;
+            var lines=new List<string>();
+            if(DefenseMission)
+            {
+                lines.Add("UNMIL_DefenseDuration".Translate(UNQuestDisplay.Time(defenceTicks)));
+                if(!generated||began<0)lines.Add("UNMIL_DefenseNotStarted".Translate());
+                else lines.Add(DefenseTicksLeft>0?"UNMIL_DefenseRemaining".Translate(UNQuestDisplay.Time(DefenseTicksLeft)).ToString():"UNMIL_DefenseDone".Translate().ToString());
+                if(generated)lines.Add("UNMIL_Protected".Translate(targets.Count(p=>p!=null&&!p.Dead&&p.Spawned&&p.Map==destination?.Map),
+                    patientCount,ProtectedStructureSafe?"UNMIL_Intact".Translate().ToString():"UNMIL_NotIntact".Translate().ToString()));
+            }
+            if(generated&&TracksEnemies)
+            {
+                int resolved=enemyIds.Count(EnemyResolved);
+                lines.Add("UNMIL_Enemies".Translate(resolved,enemyIds.Count,enemyIds.Count-resolved));
+                if(!enemyRosterRecorded||enemyRosterUncertain)lines.Add("UNMIL_RosterUnknown".Translate());
+                if(kind==3)
+                {
+                    int freed=departedGuests.Count+targets.Count(p=>p!=null&&!GuestDeparted(p)&&!p.Dead&&
+                        (p.Faction==Faction.OfPlayer||IsNativeGuest(p)||guestSince.ContainsKey(p.ThingID))&&!p.IsPrisoner);
+                    lines.Add("UNMIL_Rescued".Translate(freed,patientCount));
+                }
+            }
+            return string.Join("\n",lines);
+        }
         // Stable ThingIDs survive individual exits and save/load, even if a world pawn is discarded.
         private Dictionary<string,int> guestSince=new Dictionary<string,int>();
         private HashSet<string> departedGuests=new HashSet<string>();
@@ -389,6 +489,7 @@ namespace UNPeacekeepers
         public int DurationTicks=>durationTicks;
         public string OfferDescription=>"UNMS_Kind".Translate()+": "+("UNMS_Kind"+kind).Translate()+"\n"+"UNMS_Destination".Translate(destination?.Label??"UNMS_Camp".Translate().ToString(),tile.ToString())+"\n"+"UNMS_Faction".Translate(supportedFaction?.Name??"—")+"\n"+
             (kind==0?string.Join("\n",goods.Select((g,i)=>(g?.LabelCap.ToString()??"—")+": "+(i<delivered.Count?delivered[i]:0)+"/"+(i<required.Count?required[i]:0))):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+(kind==1&&bionicCase?"\n"+"UNMS_BionicGoal".Translate().ToString():"")+"\n"+"UNQ_TotalDuration".Translate(UNQuestDisplay.Time(durationTicks))+
+            (DefenseMission?"\n"+"UNMIL_DefenseDuration".Translate(UNQuestDisplay.Time(defenceTicks)).ToString():"")+
             (enemyFaction!=null?"\n"+"UNMS_Enemy".Translate(enemyFaction.Name,enemyBudget.ToString("0")):"\n"+"UNMS_Peaceful".Translate());
         public int RemainingTicks=>UNMissionPolicy.RemainingTicks(durationTicks,quest?.TicksSinceAccepted??0);
         // Read-only progress display. The rules remain in PollMission/ProcessGuests.
@@ -416,6 +517,7 @@ namespace UNPeacekeepers
                 {
                     var names=targets.Where(p=>p!=null).Select(p=>p.LabelShortCap.ToString()).ToList();
                     if(names.Count>0)lines.Add("UNMS_NameTargets".Translate(string.Join(", ",names)));
+                    var military=MilitarySummary();if(!military.NullOrEmpty())lines.Add(military);
                     if(HasGuestPhase&&generated)lines.Add(GuestProgress());
                 }
                 return string.Join("\n",lines);
@@ -426,17 +528,16 @@ namespace UNPeacekeepers
             if(!started)return "UNQ_NextSetup".Translate();
             if(kind==0)return "UNQ_NextSupply".Translate();
             if(!generated)return "UNQ_NextTravel".Translate();
-            if(kind==4||kind==5)return "UNQ_NextProtect".Translate();
-            if(kind==6)
+            if(DefenseMission)
             {
-                if(shuttle!=null)return "UNQ_NextShuttle".Translate();
-                if(targets.Any(p=>p!=null&&OnHomeHeld(p)&&p.IsPrisonerOfColony))
-                    return "UNQ_NextStabilize".Translate();
-                return "UNQ_NextArrest".Translate();
+                if(!ProtectedPeopleSafe)return "UNMIL_NextProtectPeople".Translate();
+                if(!AllEnemiesResolved)return "UNMIL_NextEnemies".Translate();
+                return "UNMIL_NextHold".Translate();
             }
+            if(kind==6)return EliteStatus();
             if(shuttle!=null)return guestPickupAborting?"UNG_PickupAbort".Translate().ToString():
                 PickupLanded?"UNQ_NextShuttle".Translate().ToString():"UNG_WaitLanding".Translate().ToString();
-            if(kind==3&&enemies.Any(p=>p!=null&&!p.Dead&&!p.Downed&&p.Spawned&&p.Map==destination?.Map))
+            if(kind==3&&!AllEnemiesResolved&&targets.Any(p=>p!=null&&!p.Dead&&!GuestDeparted(p)&&p.Faction!=Faction.OfPlayer&&AtField(p)))
                 return "UNQ_NextGuards".Translate();
             var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
             if(kind==1)
@@ -510,6 +611,12 @@ namespace UNPeacekeepers
             Scribe_Collections.Look(ref guestSince,"unGuestSince",LookMode.Value,LookMode.Value);
             Scribe_Collections.Look(ref departedGuests,"unDepartedGuests",LookMode.Value);
             Scribe_Collections.Look(ref medicalHomePatients,"unMedicalHomePatients",LookMode.Value);
+            Scribe_Collections.Look(ref enemyIds,"unEnemyIds",LookMode.Value);
+            Scribe_Collections.Look(ref enemyDeaths,"unEnemyDeaths",LookMode.Value);
+            Scribe_Collections.Look(ref enemyExits,"unEnemyExits",LookMode.Value);
+            Scribe_Values.Look(ref enemyRosterRecorded,"unEnemyRosterRecorded",false);
+            Scribe_Values.Look(ref enemyRosterUncertain,"unEnemyRosterUncertain",false);
+            Scribe_Values.Look(ref nextElitePickupAttempt,"unNextElitePickupAttempt",0);
             Scribe_Collections.Look(ref guestPickup,"unGuestPickup",LookMode.Reference);
             Scribe_Values.Look(ref guestPickupActive,"unGuestPickupActive",false);
             Scribe_Values.Look(ref guestPickupAborting,"unGuestPickupAborting",false);
@@ -535,6 +642,10 @@ namespace UNPeacekeepers
                 if(guestSince==null)guestSince=new Dictionary<string,int>();
                 if(departedGuests==null)departedGuests=new HashSet<string>();
                 if(medicalHomePatients==null)medicalHomePatients=new HashSet<string>();
+                if(enemyRosterRecorded&&(enemyIds==null||enemyDeaths==null||enemyExits==null))enemyRosterUncertain=true;
+                if(enemyIds==null)enemyIds=new HashSet<string>();
+                if(enemyDeaths==null)enemyDeaths=new HashSet<string>();
+                if(enemyExits==null)enemyExits=new HashSet<string>();
                 if(guestPickup==null)guestPickup=new List<Pawn>();
             }
         }
@@ -555,11 +666,13 @@ namespace UNPeacekeepers
             if(destination==null||!destination.Spawned){Finish(false,UNMissionFailure.DestinationLost);return;}
             if(custody==null)custody=quest.PartsListForReading.OfType<QuestPart_ExtraFaction>().FirstOrDefault();
             if(custody!=null)custody.affectedPawns=targets;
-            if(generated&&(kind==4||kind==5))
+            UpdateEnemyRoster();
+            if(generated&&DefenseMission)
             {
                 if(targets.Count!=patientCount||patientCount<=0||protectedThings.Count==0){Finish(false,UNMissionFailure.ProtectionLost);return;}
                 if(protectedThings.Any(t=>t==null||t.Destroyed)){Finish(false,UNMissionFailure.ProtectionLost);return;}
-                if(Find.TickManager.TicksGame>=began+defenceTicks&&targets.All(p=>p.Spawned&&p.Map==destination.Map)&&enemies.All(p=>p!=null&&(p.Dead||p.Downed))){Finish(true);return;}
+                if(UNMissionPolicy.DefenseComplete(RemainingTicks>0,began>=0,DefenseTicksLeft,ProtectedPeopleSafe,ProtectedStructureSafe,AllEnemiesResolved))
+                {Finish(true);return;}
             }
             if(generated&&HasGuestPhase)
             {
@@ -568,8 +681,13 @@ namespace UNPeacekeepers
                 if(shuttle==null||guestPickupActive)ProcessGuests();
             }
             if(generated&&kind==6&&targets.Count==patientCount&&shuttle==null&&homeMap!=null&&Find.Maps.Contains(homeMap)&&
-                targets.All(p=>OnHome(p)&&GuestHealthy(p)&&p.IsPrisonerOfColony))
-                UNMissionSites.TryPickup(homeMap,targets,SignalTag,out shuttle);
+                targets.All(p=>OnHome(p)&&EliteEligible(p))&&Find.TickManager.TicksGame>=nextElitePickupAttempt)
+            {
+                nextElitePickupAttempt=Find.TickManager.TicksGame+UNMissionPolicy.GuestPickupRetryTicks;
+                shuttleSatisfied=false;
+                if(UNMissionSites.TryPickup(homeMap,targets,SignalTag,out shuttle))
+                    Find.LetterStack.ReceiveLetter("UNMIL_PickupTitle".Translate(),"UNMIL_PickupBody".Translate(quest.name),LetterDefOf.NeutralEvent,targets[0]);
+            }
             if(shuttle!=null&&shuttle.shipThing.Destroyed&&!shuttleSent)Finish(false,UNMissionFailure.ShuttleLost);
         }
         bool MissingOrDeadTarget()
@@ -723,14 +841,22 @@ namespace UNPeacekeepers
             base.Notify_QuestSignalReceived(signal);
             var passengers=guestPickupActive?guestPickup:targets;
             if(!finished&&signal.tag==SignalTag+".SentSatisfied"&&shuttle!=null&&passengers.Count>0&&
-                (!HasGuestPhase||RemainingTicks>0)&&!guestPickupAborting&&
-                passengers.All(p=>p!=null&&!p.Dead&&(!guestPickupActive||ReadyToLeave(p,Find.TickManager.TicksGame))&&OnPickupShuttle(p)))
+                RemainingTicks>0&&!guestPickupAborting&&
+                passengers.All(p=>p!=null&&!p.Dead&&(!guestPickupActive||ReadyToLeave(p,Find.TickManager.TicksGame))&&
+                    (kind!=6||EliteEligible(p))&&OnPickupShuttle(p)))
                 shuttleSatisfied=true;
         }
         // Snapshot actual passengers before the native launch moves the container.
         public void PrepareGuestLaunch(TransportShip departing)
         {
-            if(finished||!guestPickupActive||departing!=shuttle)return;
+            if(finished||departing!=shuttle)return;
+            if(!guestPickupActive)
+            {
+                directLaunchBeforeDeadline=RemainingTicks>0;
+                directLaunchBoarded=targets.Count==patientCount&&patientCount>0&&targets.All(OnPickupShuttle);
+                directLaunchEligible=targets.All(p=>p!=null&&!p.Dead&&(kind!=6||EliteEligible(p)));
+                return;
+            }
             guestLaunchBeforeDeadline=RemainingTicks>0;
             guestLaunchAnyBoarded=guestPickup.Any(OnPickupShuttle);
             guestLaunchAllBoarded=guestPickup.Count>0&&guestPickup.All(OnPickupShuttle);
@@ -739,7 +865,7 @@ namespace UNPeacekeepers
         public void NotifyDeparted(TransportShip departed)
         {
             if(finished||quest.State!=QuestState.Ongoing||departed!=shuttle)return;
-            if(HasGuestPhase&&RemainingTicks<=0){Finish(false,UNMissionFailure.Deadline);return;}
+            if(RemainingTicks<=0){Finish(false,UNMissionFailure.Deadline);return;}
             if(guestPickupActive)
             {
                 bool confirmed=UNMissionPolicy.CanConfirmGuestLaunch(guestPickupActive,guestPickupAborting,
@@ -756,9 +882,19 @@ namespace UNPeacekeepers
                 else ResetPickup(); // confirmed empty departure; another pickup may be attempted
                 return;
             }
-            // Preserve older direct civilian shuttles and military arrests.
-            if(shuttleSatisfied&&targets.Count==patientCount&&targets.All(p=>p!=null&&!p.Dead))
+            // Legacy civilian direct shuttles retain their eligibility rules; elite arrests
+            // additionally require the original living, stabilized prisoner at launch.
+            if(UNMissionPolicy.DirectPickupComplete(directLaunchBeforeDeadline,
+                targets.Count==patientCount&&targets.All(p=>p!=null&&!p.Dead),directLaunchBoarded,directLaunchEligible,shuttleSatisfied))
             {shuttleSent=true;Finish(true);}
+            else if(kind==6)
+            {
+                // A failed native launch cannot be called a success; only retry when the
+                // actual target remains at home, otherwise fail with a concrete reason.
+                if(EliteTarget!=null&&OnHomeHeld(EliteTarget)&&!OnPickupShuttle(EliteTarget))
+                {shuttle=null;shuttleSatisfied=false;}
+                else Finish(false,UNMissionFailure.PickupUnverified);
+            }
         }
         bool CanAct()
         {
@@ -801,7 +937,8 @@ namespace UNPeacekeepers
             }
             else if(kind==2||kind==3)
             {
-                if(kind==3&&enemies.Any(p=>p!=null&&!p.Dead&&!p.Downed&&p.Spawned&&p.Map==map))
+                UpdateEnemyRoster();
+                if(kind==3&&!AllEnemiesResolved)
                 {Messages.Message("UNMS_EnemiesRemain".Translate(),MessageTypeDefOf.RejectInput,false);return;}
                 // Consent/release applies to these exact mission people, making them controllable for travel.
                 foreach(var p in targets.Where(p=>p!=null&&!p.Dead&&p.Map==map&&p.Position.DistanceTo(marker.Position)<=8f)){p.GetLord()?.Notify_PawnLost(p,PawnLostCondition.LeftVoluntarily);p.guest?.SetGuestStatus(null);p.SetFaction(Faction.OfPlayer);}
@@ -1050,6 +1187,7 @@ namespace UNPeacekeepers
                     if(un!=null){var force=Group(map,un,enemyBudget*0.1f,center+new IntVec3(-12,0,0));allies.AddRange(force);LordMaker.MakeNewLord(un,new LordJob_DefendPoint(center,12f,45f),map,force);}
                     if(kind==5){var defenders=Group(map,supportedFaction,enemyBudget*0.25f,center);allies.AddRange(defenders);LordMaker.MakeNewLord(supportedFaction,new LordJob_DefendPoint(center,15f,45f),map,defenders);}
                     foreach(var p in enemies.Concat(allies))map.attackTargetsCache.UpdateTarget(p);
+                    UpdateEnemyRoster();
                 }
             }
             finally{Rand.PopState();}

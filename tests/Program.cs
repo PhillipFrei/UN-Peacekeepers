@@ -88,6 +88,16 @@ class Program
         Check(UNMissionPolicy.RemainingTicks(60000,60000)==0&&UNMissionPolicy.RemainingTicks(60000,60001)==0&&UNMissionPolicy.RemainingTicks(60000,59999)==1,"Exact mission deadline display");
         Check(UNMissionPolicy.TicksUntil(100,101)==0&&UNMissionPolicy.TicksUntil(100,99)==1,"Absolute deadline display");
         Check(!UNMissionPolicy.HasOfferDeadline(-1)&&!UNMissionPolicy.HasOfferDeadline(0)&&!UNMissionPolicy.HasOfferDeadline(int.MaxValue)&&UNMissionPolicy.HasOfferDeadline(180000),"Offer deadline sentinels");
+        Check(UNMissionPolicy.DefenseRemaining(-1,60000,100)==60000,"Defense timer starts on visit");
+        Check(UNMissionPolicy.DefenseRemaining(100,60000,60099)==1&&UNMissionPolicy.DefenseRemaining(100,60000,60100)==0,"Exact defense timer");
+        for(int mask=0;mask<64;mask++)
+        {
+            bool known=(mask&1)!=0,dead=(mask&2)!=0,downed=(mask&4)!=0,detained=(mask&8)!=0,exit=(mask&16)!=0,returned=(mask&32)!=0;
+            Check(UNMissionPolicy.EnemyNeutralized(known,dead,downed,detained,exit,returned)==(known&&(dead||downed||detained||exit&&!returned)),"Enemy proof "+mask);
+            Check(UNMissionPolicy.DefenseComplete(known,dead,downed?0:1,detained,exit,returned)==(mask==63),"Defense proof "+mask);
+        }
+        for(int mask=0;mask<32;mask++)
+            Check(UNMissionPolicy.DirectPickupComplete((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0,(mask&16)!=0)==(mask==31),"Direct pickup proof "+mask);
         // Only active site reservations, home maps, protected units and native safety block removal.
         for(int mask=0;mask<16;mask++)
             Check(UNMissionPolicy.CanCloseSite((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0)==(mask==0),"Cleanup blockers "+mask);

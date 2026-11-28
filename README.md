@@ -1,10 +1,10 @@
-# UN Peacekeepers 0.3.6 alpha — packages 1–3 development build
+# UN Peacekeepers 0.3.6 alpha — packages 1–4 development build
 
 Based on release/0.3.4-alpha (`d43f2477`) with centralized quest completion, simplified automatic site clearance, individual guest stays and saved-quest repair. This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
 
 ## Package 1 — live quest displays
 
-Uniform remaining time (game days, hours, minutes, rounded up), offer deadline or no fixed deadline, next-step text, persisted failure reasons, live active-first mission list in UN Central including old supply contracts and ultimatum. Existing saved failure reasons are unknown unless recorded; no retrospective assumptions. All original mission deadlines, guest rules, reward amounts, map cleanup and combat conditions are retained. Packages 4–6 are not yet integrated. CI-base is not the final installable version.
+Uniform remaining time (game days, hours, minutes, rounded up), offer deadline or no fixed deadline, next-step text, persisted failure reasons, live active-first mission list in UN Central including old supply contracts and ultimatum. Existing saved failure reasons are unknown unless recorded; no retrospective assumptions. All original mission deadlines, guest rules, reward amounts, map cleanup and combat conditions are retained. Packages 5–6 are not yet integrated. CI-base is not the final installable version.
 
 ## Package 2 — guest stay and evacuation
 
@@ -13,6 +13,10 @@ Live group countdown is the latest valid individual guest-stay timer, not a pred
 ## Package 3 — medical treatment
 
 All original patients must be accounted for. A living, fully recovered patient still at the field hospital counts at completion, unless observed at home or already on the saved guest route. Home patients require full recovery, the unchanged 24-hour guest stay and confirmed departure. Mixed groups complete automatically when both sets satisfy their conditions. Field recovery is rechecked rather than irrevocably credited. Saved home-route IDs and existing guest records are preserved; historic home visits without saved evidence cannot be inferred. Individual medical displays use the actual recovery predicates, show bleeding, acute injuries, treatable illnesses, required limb/implant and anesthesia. No estimated healing time is invented. If a bionic scenario cannot safely provide the implant, it uses the existing normal-injury fallback and updates the description. No medical balance or reward change.
+
+## Package 4 — military objectives and handover
+
+Defense duration is shown before acceptance and counts down from first map generation, with protected civilian/structure and remaining enemy counts. Guards and attackers count as neutralized when dead, downed, player prisoners, or observed leaving the map into the world; confirmed flight is revoked on return. A weaponless but combat-capable pawn is not neutralized. Exact enemy IDs and confirmed deaths/exits are saved; missing references without proof are not automatic success. Elite arrest and ultimatum display target/pickup phases and require verified boarding and actual timely departure. Failed pickup requests are throttled to one game hour. Original deadlines, combat budget, rewards and cleanup remain unchanged. Actual AI and shuttle behavior still require game testing.
 
 ## Install
 

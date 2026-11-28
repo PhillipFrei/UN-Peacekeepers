@@ -11,6 +11,7 @@ namespace UNPeacekeepers
         static void Prefix(ShipJob_FlyAway __instance)
         {
             foreach(var mission in UNMissionSites.Active.ToList())mission.PrepareGuestLaunch(__instance.transportShip);
+            UNUltimatum.Instance?.Active?.PrepareLaunch(__instance.transportShip);
         }
         static void Postfix(ShipJob_FlyAway __instance,bool __result)
         {

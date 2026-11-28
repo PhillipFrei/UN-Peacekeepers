@@ -44,6 +44,14 @@ namespace UNPeacekeepers
         public static bool UsesGuestStay(int kind)=>kind==1||kind==2||kind==3;
         public static bool GuestStayComplete(int since,int now)=>since>=0&&(long)now-since>=GuestStayTicks;
         public static int GuestTicksRemaining(int since,int now)=>since<0?GuestStayTicks:(int)Math.Max(0,Math.Min(GuestStayTicks,(long)since+GuestStayTicks-now));
+        public static int DefenseRemaining(int began,int duration,int now)
+            =>began<0?Math.Max(0,duration):RemainingTicks(duration,TicksUntil(now,began));
+        public static bool EnemyNeutralized(bool known,bool dead,bool downed,bool detained,bool confirmedExit,bool returned)
+            =>known&&(dead||downed||detained||(confirmedExit&&!returned));
+        public static bool DefenseComplete(bool beforeDeadline,bool timerStarted,int remaining,bool peopleSafe,bool structureSafe,bool enemiesNeutralized)
+            =>beforeDeadline&&timerStarted&&remaining==0&&peopleSafe&&structureSafe&&enemiesNeutralized;
+        public static bool DirectPickupComplete(bool beforeDeadline,bool targetAlive,bool boarded,bool eligible,bool satisfied)
+            =>beforeDeadline&&targetAlive&&boarded&&eligible&&satisfied;
         public static bool AllDeparted(int required,int departed)=>required>0&&departed==required;
         // Only mutually exclusive, verified patient routes may contribute to success.
         public static bool MedicalObjectivesComplete(int required,int remaining,int fieldRecovered,int departed)
