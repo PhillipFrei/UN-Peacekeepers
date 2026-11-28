@@ -488,7 +488,7 @@ namespace UNPeacekeepers
             pawn.guest!=null&&pawn.guest.GuestStatus==GuestStatus.Guest;
         public int DurationTicks=>durationTicks;
         public string OfferDescription=>"UNMS_Kind".Translate()+": "+("UNMS_Kind"+kind).Translate()+"\n"+"UNMS_Destination".Translate(destination?.Label??"UNMS_Camp".Translate().ToString(),tile.ToString())+"\n"+"UNMS_Faction".Translate(supportedFaction?.Name??"—")+"\n"+
-            (kind==0?string.Join("\n",goods.Select((g,i)=>(g?.LabelCap.ToString()??"—")+": "+(i<delivered.Count?delivered[i]:0)+"/"+(i<required.Count?required[i]:0))):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+(kind==1&&bionicCase?"\n"+"UNMS_BionicGoal".Translate().ToString():"")+"\n"+"UNQ_TotalDuration".Translate(UNQuestDisplay.Time(durationTicks))+
+            (kind==0?string.Join("\n",goods.Select((g,i)=>(g?.LabelCap.ToString()??"—")+": "+(i<required.Count?required[i]:0))):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+(kind==1&&bionicCase?"\n"+"UNMS_BionicGoal".Translate().ToString():"")+"\n"+"UNQ_TotalDuration".Translate(UNQuestDisplay.Time(durationTicks))+
             (DefenseMission?"\n"+"UNMIL_DefenseDuration".Translate(UNQuestDisplay.Time(defenceTicks)).ToString():"")+
             (enemyFaction!=null?"\n"+"UNMS_Enemy".Translate(enemyFaction.Name,enemyBudget.ToString("0")):"\n"+"UNMS_Peaceful".Translate());
         public int RemainingTicks=>UNMissionPolicy.RemainingTicks(durationTicks,quest?.TicksSinceAccepted??0);
@@ -508,11 +508,7 @@ namespace UNPeacekeepers
                 if(quest.State!=QuestState.Ongoing)return header;
                 if(finished)return header+"\n"+(achieved?"UNQ_CompletionPending".Translate().ToString():UNQuestDisplay.Failed(FailureReason));
                 var lines=new List<string>{header,UNQuestDisplay.Next(NextStep())};
-                if(kind==0)
-                {
-                    for(int i=0;i<goods.Count&&i<required.Count&&i<delivered.Count;i++)
-                        lines.Add((goods[i]?.LabelCap.ToString()??"—")+": "+delivered[i]+"/"+required[i]);
-                }
+                if(kind==0)lines.Add(SupplySummary());
                 else
                 {
                     var names=targets.Where(p=>p!=null).Select(p=>p.LabelShortCap.ToString()).ToList();
@@ -522,6 +518,15 @@ namespace UNPeacekeepers
                 }
                 return string.Join("\n",lines);
             }
+        }
+        public string SupplySummary()
+        {
+            if(kind!=0)return null;
+            var lines=new List<string>();
+            for(int i=0;i<goods.Count&&i<required.Count&&i<delivered.Count;i++)
+                lines.Add("UNPAY_SupplyLine".Translate(goods[i]?.LabelCap.ToString()??"—",delivered[i],required[i],
+                    UNMissionPolicy.SupplyRemaining(required[i],delivered[i])));
+            return string.Join("\n",lines);
         }
         string NextStep()
         {
@@ -916,13 +921,25 @@ namespace UNPeacekeepers
         }
         void Deliver(List<Thing> things)
         {
-            for(int i=0;i<goods.Count;i++)foreach(var thing in things.Where(t=>t.def==goods[i]&&!t.Destroyed).ToList())
+            if(!CanAct()||kind!=0)return;
+            if(goods.Count==0||goods.Any(g=>g==null)||required.Count!=goods.Count||delivered.Count!=goods.Count||
+                required.Any(n=>n<=0)||delivered.Where((n,i)=>n<0||n>required[i]).Any())
             {
-                int count=Math.Min(required[i]-delivered[i],thing.stackCount);if(count<=0)break;
-                var taken=thing.SplitOff(count);taken.Destroy(DestroyMode.Vanish);delivered[i]+=count;
+                var reward=quest.GetFirstPartOfType<UNMissionReward>();
+                if(reward!=null){reward.technicalRepair=true;reward.settled=true;}
+                Finish(false,UNMissionFailure.Technical);return;
             }
-            if(delivered.SequenceEqual(required))Finish(true);
-            else Messages.Message("UNMS_Partial".Translate(),MessageTypeDefOf.NeutralEvent,false);
+            var unique=things.Where(t=>t!=null).Distinct().ToList();
+            for(int i=0;i<goods.Count;i++)foreach(var thing in unique.Where(t=>t.def==goods[i]&&!t.Destroyed).ToList())
+            {
+                int count=UNMissionPolicy.SupplyTake(required[i],delivered[i],thing.stackCount);
+                if(count<=0)break;
+                var taken=thing.SplitOff(count);
+                try{taken.Destroy(DestroyMode.Vanish);}
+                finally{if(taken.Destroyed)delivered[i]+=count;}
+            }
+            if(UNMissionPolicy.StoredDeliveryComplete(required,delivered,goods.Count))Finish(true);
+            else Messages.Message("UNMS_Partial".Translate().ToString()+"\n"+SupplySummary(),MessageTypeDefOf.NeutralEvent,false);
         }
         public void Review(Map map)
         {

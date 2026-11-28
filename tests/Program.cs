@@ -98,6 +98,18 @@ class Program
         }
         for(int mask=0;mask<32;mask++)
             Check(UNMissionPolicy.DirectPickupComplete((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0,(mask&16)!=0)==(mask==31),"Direct pickup proof "+mask);
+        Check(!UNMissionPolicy.OfferExpired(180000,179999)&&UNMissionPolicy.OfferExpired(180000,180000)&&UNMissionPolicy.OfferExpired(180000,180001),"Offer exact expiry");
+        Check(!UNMissionPolicy.OfferExpired(-1,int.MaxValue)&&!UNMissionPolicy.OfferExpired(int.MaxValue,int.MaxValue),"No expiry sentinel");
+        for(int required=1;required<=40;required++)for(int delivered=0;delivered<=required;delivered++)for(int available=0;available<=45;available++)
+            Check(UNMissionPolicy.SupplyTake(required,delivered,available)==Math.Min(required-delivered,available),"Supply exact remainder");
+        for(int mask=0;mask<8;mask++)
+        {
+            bool a=(mask&1)!=0,b=(mask&2)!=0,c=(mask&4)!=0;
+            Check(UNMissionPolicy.CanQueueSilver(a,b?1500:0,c)==(mask==0),"Queue once "+mask);
+            Check(UNMissionPolicy.DispatchOutcome(a,b,c)==(a?1:b||c?2:0),"Spawn proof "+mask);
+        }
+        Check(UNMissionPolicy.CanDispatchSilver(1500,false,100,100)&&!UNMissionPolicy.CanDispatchSilver(1500,false,99,100),"Retry timing");
+        Check(!UNMissionPolicy.CanDispatchSilver(1500,true,int.MaxValue,0)&&!UNMissionPolicy.CanDispatchSilver(0,false,100,0),"Never replay uncertain or paid");
         // Only active site reservations, home maps, protected units and native safety block removal.
         for(int mask=0;mask<16;mask++)
             Check(UNMissionPolicy.CanCloseSite((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0)==(mask==0),"Cleanup blockers "+mask);

@@ -48,4 +48,23 @@
   <UNM_SupplementDecline>Decline</UNM_SupplementDecline>
   <UNM_SupplementUnavailable>This offer is no longer available.</UNM_SupplementUnavailable>
   <UNM_SupplementNoPawn>An available colonist on a home map is required to accept.</UNM_SupplementNoPawn>
+  <UNPAY_NotEarned>Payment: only after complete success.</UNPAY_NotEarned>
+  <UNPAY_NoReward>Payment: no success reward.</UNPAY_NoReward>
+  <UNPAY_Settling>Payment: settlement pending.</UNPAY_Settling>
+  <UNPAY_Queued>Payment: {0} silver queued.</UNPAY_Queued>
+  <UNPAY_NoHome>Payment: {0} silver pending – no home map available.</UNPAY_NoHome>
+  <UNPAY_NoLanding>Payment: {0} silver pending – no safe landing spot.</UNPAY_NoLanding>
+  <UNPAY_Retry>Payment: {0} silver pending – delivery will be retried.</UNPAY_Retry>
+  <UNPAY_Uncertain>Payment: {0} silver with uncertain dispatch status. No automatic replay.</UNPAY_Uncertain>
+  <UNPAY_Dispatched>Payment: {0} silver dispatched by drop pod (collect at landing location).</UNPAY_Dispatched>
+  <UNPAY_LegacyUnknown>Payment: older settlement; individual status unverifiable. No repeated award.</UNPAY_LegacyUnknown>
+  <UNPAY_QuestId>Assignment #{0}: {1}</UNPAY_QuestId>
+  <UNPAY_OldParcel>Older queued payment: {0}</UNPAY_OldParcel>
+  <UNPAY_PendingTitle>Pending and uncertain silver payments</UNPAY_PendingTitle>
+  <UNPAY_HistoryTitle>History</UNPAY_HistoryTitle>
+  <UNPAY_SupplyLine>{0}: {1}/{2} delivered | missing: {3}</UNPAY_SupplyLine>
+  <UNPAY_Optional>Optional follow-up – no main mission slot</UNPAY_Optional>
+  <UNPAY_Declined>Follow-up declined – no penalty.</UNPAY_Declined>
+  <UNPAY_Expired>Acceptance deadline expired – no penalty.</UNPAY_Expired>
+  <UNPAY_Pool>UN mission pool · main assignments {0}/5 active · optional assignments {1} active</UNPAY_Pool>
 </LanguageData>

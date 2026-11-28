@@ -177,6 +177,8 @@ namespace UNPeacekeepers
                 if(mission!=null)
                 {
                     Label(width,ref y,UNQuestDisplay.Header(quest,mission.RemainingTicks),Muted);
+                    var supplySummary=mission.SupplySummary();
+                    if(!supplySummary.NullOrEmpty())Label(width,ref y,supplySummary,Muted);
                     var militarySummary=mission.MilitarySummary();
                     if(!militarySummary.NullOrEmpty())Label(width,ref y,militarySummary,Muted);
                     var medicalSummary=mission.MedicalSummary();
@@ -252,6 +254,13 @@ namespace UNPeacekeepers
         }
         private static void History(float width,ref float y)
         {
+            var pending=UNMissionManager.Instance?.PendingPaymentLines.ToList()??new List<string>();
+            if(pending.Count>0)
+            {
+                Section(width,ref y,"UNPAY_PendingTitle".Translate());
+                foreach(var line in pending)Label(width,ref y,line,Amber);
+            }
+            Section(width,ref y,"UNPAY_HistoryTitle".Translate());
             var entries=UNContact.Instance?.Entries.ToList()??new List<string>();
             if(entries.Count==0)Label(width,ref y,"UN_C_Empty".Translate(),Muted);
             for(int i=0;i<entries.Count;i++)

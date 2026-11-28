@@ -16,10 +16,28 @@ namespace UNPeacekeepers
     }
     public sealed class UNSilverParcel : IExposable
     {
-        public int amount;
+        public int amount,questId=-1,total,retryAt,blockReason;
+        public bool uncertain;
         public Map home;
         public string reason;
-        public void ExposeData(){Scribe_Values.Look(ref amount,"amount",0);Scribe_References.Look(ref home,"home");Scribe_Values.Look(ref reason,"reason");}
+        public string Status
+        {
+            get
+            {
+                if(uncertain)return "UNPAY_Uncertain".Translate(amount);
+                if(blockReason==1)return "UNPAY_NoHome".Translate(amount);
+                if(blockReason==2)return "UNPAY_NoLanding".Translate(amount);
+                if(blockReason==3)return "UNPAY_Retry".Translate(amount);
+                return "UNPAY_Queued".Translate(amount);
+            }
+        }
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref amount,"amount",0);Scribe_References.Look(ref home,"home");Scribe_Values.Look(ref reason,"reason");
+            Scribe_Values.Look(ref questId,"unQuestId",-1);Scribe_Values.Look(ref total,"unTotal",0);
+            Scribe_Values.Look(ref retryAt,"unRetryAt",0);Scribe_Values.Look(ref blockReason,"unBlockReason",0);
+            Scribe_Values.Look(ref uncertain,"unDispatchUncertain",false);
+        }
     }
     public sealed class UNMissionReward : QuestPart
     {
@@ -30,10 +48,28 @@ namespace UNPeacekeepers
         public bool started, settled, optional, supplementOffered, supplementLetterSent;
         public bool silverQueued, unGoodwillAttempted, supportedGoodwillAttempted, legacyRepairReported, technicalRepair;
         public int parentId=-1;
+        public int paymentTotal,paymentDispatched,offerClosedReason;
         public override bool RequiresAccepter=>true;
         public override string DescriptionPart=>"UNM_Reward".Translate(silver,UNMissionPolicy.Goodwill(tier),supported?.Name??"—",(difficulty*100).ToString("0")).ToString()+
             (legacyRepairReported?"\n"+"UNM_RepairPaymentUnknown".Translate(quest?.name??"—").ToString():"")+
-            (technicalRepair?"\n"+"UNM_RepairTechnical".Translate(quest?.name??"—").ToString():"");
+            (technicalRepair?"\n"+"UNM_RepairTechnical".Translate(quest?.name??"—").ToString():"")+
+            "\n"+PaymentStatus+
+            (offerClosedReason==1?"\n"+"UNPAY_Declined".Translate().ToString():offerClosedReason==2?"\n"+"UNPAY_Expired".Translate().ToString():"");
+        public string PaymentStatus
+        {
+            get
+            {
+                if(quest==null||!quest.EverAccepted)return "UNPAY_NotEarned".Translate();
+                if(quest.State==QuestState.EndedFailed)return "UNPAY_NoReward".Translate();
+                if(quest.State!=QuestState.EndedSuccess)return "UNPAY_NotEarned".Translate();
+                var parcel=UNMissionManager.Instance?.ParcelFor(quest.id);
+                if(parcel!=null)return parcel.Status;
+                if(paymentTotal>0&&paymentDispatched==paymentTotal)return "UNPAY_Dispatched".Translate(paymentDispatched);
+                if(paymentTotal>0)return "UNPAY_Uncertain".Translate(Math.Max(0,paymentTotal-paymentDispatched));
+                if(silverQueued||settled)return "UNPAY_LegacyUnknown".Translate();
+                return "UNPAY_Settling".Translate();
+            }
+        }
         public override void ExposeData()
         {
             base.ExposeData();Scribe_Values.Look(ref tier,"tier",0);Scribe_Values.Look(ref slot,"slot",0);
@@ -44,6 +80,8 @@ namespace UNPeacekeepers
             Scribe_Values.Look(ref started,"started",false);Scribe_Values.Look(ref settled,"settled",false);
             Scribe_Values.Look(ref silverQueued,"silverQueued",false);Scribe_Values.Look(ref unGoodwillAttempted,"unGoodwillAttempted",false);Scribe_Values.Look(ref supportedGoodwillAttempted,"supportedGoodwillAttempted",false);
             Scribe_Values.Look(ref legacyRepairReported,"legacyRepairReported",false);Scribe_Values.Look(ref technicalRepair,"technicalRepair",false);
+            Scribe_Values.Look(ref paymentTotal,"unPaymentTotal",0);Scribe_Values.Look(ref paymentDispatched,"unPaymentDispatched",0);
+            Scribe_Values.Look(ref offerClosedReason,"unOfferClosedReason",0);
         }
     }
     public sealed class UNMissionManager : GameComponent
@@ -52,12 +90,54 @@ namespace UNPeacekeepers
         private List<Quest> supplementOffers=new List<Quest>();
         private List<UNSilverParcel> parcels=new List<UNSilverParcel>();
         private int nextInactivity=-1, nextCheck, nextCompletionCheck;
-        private bool repairOnLoad;
+        private bool repairOnLoad,deliveringParcels;
         private readonly HashSet<int> restoredThisLoad=new HashSet<int>();
         internal static Faction exactRewardFaction;
         public UNMissionManager(Game game){}
         public static UNMissionManager Instance=>Current.Game?.GetComponent<UNMissionManager>();
-        public IEnumerable<Quest> Offers=>slots.Select(s=>s.offer).Concat(supplementOffers).Where(q=>q!=null&&q.State==QuestState.NotYetAccepted);
+        public static bool OfferOpen(Quest q)=>q!=null&&q.State==QuestState.NotYetAccepted&&
+            !UNMissionPolicy.OfferExpired(q.acceptanceExpireTick,Find.TickManager.TicksGame);
+        public IEnumerable<Quest> Offers=>slots.Select(s=>s.offer).Concat(supplementOffers).Where(OfferOpen).Distinct();
+        public UNSilverParcel ParcelFor(int id)=>id<0?null:parcels.FirstOrDefault(p=>p.questId==id&&p.amount>0);
+        public IEnumerable<string> PendingPaymentLines=>parcels.Where(p=>p.amount>0).Select(p=>
+            (p.questId>=0?"UNPAY_QuestId".Translate(p.questId,p.reason??"—").ToString():"UNPAY_OldParcel".Translate(p.reason??"—").ToString())+"\n"+p.Status);
+        public int OptionalActiveCount=>Find.QuestManager.QuestsListForReading.Count(q=>q.State==QuestState.Ongoing&&q.GetFirstPartOfType<UNMissionReward>()?.optional==true);
+        public static Pawn OptionalAccepter(Quest q)
+        {
+            var home=q?.GetFirstPartOfType<UNMissionReward>()?.home;
+            return Find.Maps.Where(map=>map.IsPlayerHome).OrderByDescending(map=>map==home)
+                .SelectMany(map=>map.mapPawns.FreeColonistsSpawned)
+                .FirstOrDefault(p=>p.Faction==Faction.OfPlayer&&!p.Dead&&!p.Downed);
+        }
+        public bool RefreshTerms(Quest q)
+        {
+            if(!OfferOpen(q))return false;
+            var reward=q.GetFirstPartOfType<UNMissionReward>();
+            var objective=q.GetFirstPartOfType<UNMissionObjective>();
+            if(reward==null||objective==null||!objective.RefreshOffer(UNMod.MissionDifficulty))return false;
+            reward.difficulty=UNMod.MissionDifficulty;
+            reward.silver=UNMissionPolicy.ScaledSilver(reward.tier,reward.difficulty);
+            q.description=objective.OfferDescription;return true;
+        }
+        public void CloseSupplement(Quest q,bool expired)
+        {
+            var r=q?.GetFirstPartOfType<UNMissionReward>();
+            if(r==null||!r.optional||q.EverAccepted||q.State!=QuestState.NotYetAccepted)return;
+            r.offerClosedReason=expired||UNMissionPolicy.OfferExpired(q.acceptanceExpireTick,Find.TickManager.TicksGame)?2:1;
+            q.End(QuestEndOutcome.InvalidPreAcceptance,false,false);
+            if(q.State==QuestState.NotYetAccepted){r.offerClosedReason=0;return;}
+            supplementOffers.Remove(q);
+            TryRewardStep(q,"optional close notice",()=>UNContact.Instance?.LogEvent(q.name+" — "+(r.offerClosedReason==2?"UNPAY_Expired":"UNPAY_Declined").Translate()));
+        }
+        void MaintainSupplements(int now)
+        {
+            foreach(var q in supplementOffers.Where(q=>q!=null).ToList())
+                if(q.State==QuestState.NotYetAccepted&&UNMissionPolicy.OfferExpired(q.acceptanceExpireTick,now))
+                    CloseSupplement(q,true);
+            supplementOffers.RemoveAll(q=>q==null||q.State!=QuestState.NotYetAccepted);
+            foreach(var letter in Find.LetterStack.LettersListForReading.OfType<UNSupplementLetter>().Where(l=>!OfferOpen(l.quest)).ToList())
+                Find.LetterStack.RemoveLetter(letter);
+        }
         public static bool IsManaged(Quest q)=>q?.PartsListForReading.OfType<UNMissionReward>().Any()==true;
         public int ActiveCount=>Find.QuestManager.QuestsListForReading.Count(q=>q.State==QuestState.Ongoing && (q.PartsListForReading.OfType<UNMissionReward>().Any(r=>!r.optional)||q.PartsListForReading.OfType<QuestPart_UNSupply>().Any()));
         public float InactivityDays=>nextInactivity<0?10f:Math.Max(0,nextInactivity-Find.TickManager.TicksGame)/60000f;
@@ -104,7 +184,7 @@ namespace UNPeacekeepers
                 }
                 MaintainPool(un.PlayerGoodwill,now);
             }
-            supplementOffers.RemoveAll(q=>q==null||q.State!=QuestState.NotYetAccepted);
+            MaintainSupplements(now);
             UNMissionSites.CleanupCompletedSites();
             foreach(var q in supplementOffers.ToList())TryRewardStep(q,"supplemental letter",()=>EnsureSupplementLetter(q));
             DeliverParcels();
@@ -146,22 +226,18 @@ namespace UNPeacekeepers
             return null;
         }
         public static bool ValidSupported(Faction f)=>f!=null&&!f.IsPlayer&&!UNContact.IsUN(f)&&!f.defeated&&!f.deactivated&&!f.temporary&&!f.Hidden;
-        public string AcceptBlock(Quest q,Pawn pawn)
+        public string AcceptBlock(Quest q,Pawn pawn,bool refreshTerms=true)
         {
             var reward=q?.PartsListForReading.OfType<UNMissionReward>().FirstOrDefault();
             var un=Authorization.GetUN();
             if(reward==null||q.State!=QuestState.NotYetAccepted||un==null||un.defeated||un.deactivated)return "UN_C_Unavailable".Translate();
+            if(!OfferOpen(q))return "UNPAY_Expired".Translate();
             if(un.PlayerGoodwill<UNMissionPolicy.Threshold(reward.tier))return "UN_AssignmentLow".Translate(UNMissionPolicy.Threshold(reward.tier));
             if(!reward.optional&&ActiveCount>=UNMissionPolicy.MaxActive)return "UNM_Full".Translate();
             if(!ValidSupported(reward.supported)||reward.supported.HostileTo(Faction.OfPlayer))return "UNM_RecipientGone".Translate();
             if(pawn==null||pawn.Dead||pawn.Faction!=Faction.OfPlayer||pawn.Map==null||!pawn.Map.IsPlayerHome)return "UNM_NeedPawn".Translate();
             var objective=q.GetFirstPartOfType<UNMissionObjective>();
-            if(objective!=null&&objective.RefreshOffer(UNMod.MissionDifficulty))
-            {
-                reward.difficulty=UNMod.MissionDifficulty;reward.silver=UNMissionPolicy.ScaledSilver(reward.tier,reward.difficulty);
-                q.description=objective.OfferDescription;
-                return "UNM_TermsChanged".Translate();
-            }
+            if(refreshTerms&&RefreshTerms(q))return "UNM_TermsChanged".Translate();
             string problem;
             if(objective==null)return "UN_C_Unavailable".Translate();
             if(!objective.ValidateAcceptance(out problem))return problem;
@@ -334,10 +410,23 @@ namespace UNPeacekeepers
             // Queue silver before goodwill changes, so overflow is computed from the pre-award balance.
             if(!r.silverQueued)
             {
-                int overflow=unAvailable?UNMissionPolicy.ExcessSilver(un.PlayerGoodwill,g):0;
-                parcels.Add(new UNSilverParcel{amount=r.silver+overflow,home=r.home,reason=q.name});
-                r.silverQueued=true;
-                TryRewardStep(q,"payment journal",()=>UNContact.Instance?.LogEvent("UNM_Payment".Translate(q.name,r.silver,overflow)));
+                var existing=ParcelFor(q.id);
+                if(UNMissionPolicy.CanQueueSilver(r.silverQueued,r.paymentTotal,existing!=null))
+                {
+                    int overflow=unAvailable?UNMissionPolicy.ExcessSilver(un.PlayerGoodwill,g):0;
+                    int total=r.silver+overflow;
+                    parcels.Add(new UNSilverParcel{questId=q.id,total=total,amount=total,home=r.home,reason=q.name});
+                    r.paymentTotal=total;
+                    r.silverQueued=true;
+                    TryRewardStep(q,"payment journal",()=>UNContact.Instance?.LogEvent("UNM_Payment".Translate(q.name,r.silver,overflow)));
+                }
+                else
+                {
+                    // Recover a saved keyed parcel or respect a recorded award. Never infer
+                    // identity from repeated quest names and never create a second parcel.
+                    if(existing!=null&&r.paymentTotal==0)r.paymentTotal=existing.total>0?existing.total:existing.amount;
+                    r.silverQueued=true;
+                }
             }
             // An exception from another mod may occur AFTER a faction mutation. Never replay an
             // ambiguous goodwill call; log it, and continue the independent silver/other faction steps.
@@ -388,7 +477,7 @@ namespace UNPeacekeepers
         void EnsureSupplementLetter(Quest q)
         {
             var r=q?.GetFirstPartOfType<UNMissionReward>();
-            if(r==null||!r.optional||r.supplementLetterSent||q.State!=QuestState.NotYetAccepted)return;
+            if(r==null||!r.optional||r.supplementLetterSent||!OfferOpen(q))return;
             var stack=Find.LetterStack;
             if(stack.LettersListForReading.OfType<UNSupplementLetter>().Any(l=>l.quest==q))
             {r.supplementLetterSent=true;return;}
@@ -404,75 +493,104 @@ namespace UNPeacekeepers
         }
         void DeliverParcels()
         {
-            foreach(var parcel in parcels.ToList())
+            if(deliveringParcels)return;
+            deliveringParcels=true;
+            try
             {
-                if(parcel.amount<=0){parcels.Remove(parcel);continue;}
-                var map=parcel.home!=null&&Find.Maps.Contains(parcel.home)&&parcel.home.IsPlayerHome?parcel.home:UNContact.RaidTarget();
-                if(map==null||!map.IsPlayerHome)continue;
-                // Prefer the normal orbital trade delivery area. Never punch a roof or
-                // force an unsafe landing. A pending reward remains saved if no spot exists.
-                var center=DropCellFinder.TradeDropSpot(map);
-                IntVec3 spot=IntVec3.Invalid;
-                if(center.IsValid&&center.InBounds(map))
-                    DropCellFinder.TryFindDropSpotNear(center,map,out spot,allowFogged:false,canRoofPunch:false);
-                if(!spot.IsValid||!spot.InBounds(map)||spot.Roofed(map))
-                    spot=DropCellFinder.TryFindSafeLandingSpotCloseToColony(map,ThingDefOf.DropPodIncoming.size,Faction.OfPlayer);
-                if(!spot.IsValid||!spot.InBounds(map)||spot.Roofed(map)||spot.Fogged(map)||
-                    !spot.Standable(map)||!DropCellFinder.SkyfallerCanLandAt(spot,map,ThingDefOf.DropPodIncoming.size,Faction.OfPlayer))continue;
-                int amount=parcel.amount;
-                // One native incoming pod per payment, with ordinary silver stacks inside.
-                // Keep a reference to the actual skyfaller so an exception after spawn
-                // cannot cause a second payment. After dispatch, normal game risks apply.
-                Skyfaller incoming=null;
-                var contents=new List<Thing>();
-                bool committed=false;
-                try
+                int now=Find.TickManager.TicksGame;
+                foreach(var parcel in parcels.ToList())
                 {
-                    var info=new ActiveTransporterInfo{openDelay=110,leaveSlag=false};
-                    int remaining=amount;
-                    while(remaining>0)
+                    if(parcel.amount<=0){parcels.Remove(parcel);continue;}
+                    if(!UNMissionPolicy.CanDispatchSilver(parcel.amount,parcel.uncertain,now,parcel.retryAt))continue;
+                    // Independent parcels cannot block each other. Retry ordinary failures hourly.
+                    parcel.retryAt=now+2500;
+                    try{DeliverParcel(parcel);}
+                    catch(Exception ex)
                     {
-                        var silver=ThingMaker.MakeThing(ThingDefOf.Silver);
-                        silver.stackCount=Math.Min(remaining,ThingDefOf.Silver.stackLimit);
-                        remaining-=silver.stackCount;contents.Add(silver);
-                        if(!info.innerContainer.TryAdd(silver,false))throw new InvalidOperationException("Could not fill silver drop pod.");
+                        if(!parcel.uncertain)parcel.blockReason=3;
+                        Log.Error("[UN Peacekeepers] Silver dispatch check failed for "+parcel.reason+": "+ex);
                     }
-                    var pod=(ActiveTransporter)ThingMaker.MakeThing(ThingDefOf.ActiveDropPod);
-                    pod.Contents=info;
-                    incoming=SkyfallerMaker.MakeSkyfaller(ThingDefOf.DropPodIncoming,pod);
-                    if(pod.Destroyed)throw new InvalidOperationException("Could not load silver drop pod.");
-                    GenSpawn.Spawn(incoming,spot,map);
-                    committed=incoming.Spawned&&incoming.Map==map;
                 }
-                catch(Exception ex)
-                {
-                    committed=incoming!=null&&incoming.Spawned&&incoming.Map==map;
-                    Log.Error("[UN Peacekeepers] Silver pod dispatch "+(committed?"spawned before exception":"will retry")+" for "+parcel.reason+": "+ex);
-                }
-                if(!committed)
-                {
-                    // Nothing reached a map: discard only the unspawned temporary cargo.
-                    // If a third-party hook moved some stacks onto a map, account for those
-                    // individually instead of ever paying those same stacks again.
-                    foreach(var silver in contents)
-                    {
-                        if(silver.MapHeld!=null)parcel.amount=UNMissionPolicy.RemainingAfterPlacement(parcel.amount,silver.stackCount);
-                        else if(!silver.Destroyed)silver.Destroy();
-                    }
-                    continue;
-                }
-                parcel.amount=UNMissionPolicy.RemainingAfterDropDispatch(amount,true);
-                parcels.Remove(parcel);
-                // The debit precedes the notice; a UI failure cannot replay the payment.
-                try
-                {
-                    UNContact.Instance?.LogEvent("UNM_PaymentPodJournal".Translate(parcel.reason,amount));
-                    Find.LetterStack.ReceiveLetter("UNM_PaymentPodTitle".Translate(),"UNM_PaymentPodText".Translate(parcel.reason,amount),
-                        LetterDefOf.PositiveEvent,new LookTargets(spot,map));
-                }
-                catch(Exception ex){Log.Error("[UN Peacekeepers] Silver pod notification failed: "+ex);}
             }
+            finally{deliveringParcels=false;}
         }
+        void DeliverParcel(UNSilverParcel parcel)
+        {
+            var map=parcel.home!=null&&Find.Maps.Contains(parcel.home)&&parcel.home.IsPlayerHome?parcel.home:UNContact.RaidTarget();
+            if(map==null||!map.IsPlayerHome){parcel.blockReason=1;return;}
+            // Prefer a safe outdoor spot near the orbital trade beacon.
+            var center=DropCellFinder.TradeDropSpot(map);
+            IntVec3 spot=IntVec3.Invalid;
+            if(center.IsValid&&center.InBounds(map)&&
+                !DropCellFinder.TryFindDropSpotNear(center,map,out spot,allowFogged:false,canRoofPunch:false))spot=IntVec3.Invalid;
+            if(!SafeSilverSpot(spot,map))
+                spot=DropCellFinder.TryFindSafeLandingSpotCloseToColony(map,ThingDefOf.DropPodIncoming.size,Faction.OfPlayer);
+            if(!SafeSilverSpot(spot,map)){parcel.blockReason=2;return;}
+            int amount=parcel.amount;
+            Skyfaller incoming=null;
+            var contents=new List<Thing>();
+            bool spawnAttempted=false,committed=false;
+            try
+            {
+                var info=new ActiveTransporterInfo{openDelay=110,leaveSlag=false};
+                int remaining=amount;
+                while(remaining>0)
+                {
+                    var silver=ThingMaker.MakeThing(ThingDefOf.Silver);
+                    silver.stackCount=Math.Min(remaining,ThingDefOf.Silver.stackLimit);
+                    remaining-=silver.stackCount;contents.Add(silver);
+                    if(!info.innerContainer.TryAdd(silver,false))throw new InvalidOperationException("Could not fill silver drop pod.");
+                }
+                var pod=(ActiveTransporter)ThingMaker.MakeThing(ThingDefOf.ActiveDropPod);
+                pod.Contents=info;
+                incoming=SkyfallerMaker.MakeSkyfaller(ThingDefOf.DropPodIncoming,pod);
+                if(pod.Destroyed)throw new InvalidOperationException("Could not load silver drop pod.");
+                // Persist the uncertainty guard BEFORE any engine/mod spawn callbacks.
+                // A reentrant save during dispatch must never authorize a second payment.
+                spawnAttempted=true;parcel.uncertain=true;
+                GenSpawn.Spawn(incoming,spot,map);
+                committed=incoming.Spawned&&incoming.Map==map;
+            }
+            catch(Exception ex)
+            {
+                committed=incoming!=null&&incoming.Spawned&&incoming.Map==map;
+                Log.Error("[UN Peacekeepers] Silver pod dispatch for "+parcel.reason+": "+ex);
+            }
+            int result=UNMissionPolicy.DispatchOutcome(committed,spawnAttempted,contents.Any(t=>t.MapHeld!=null));
+            if(result==2)
+            {
+                // A third-party hook may have spawned/moved/destroyed the cargo before an exception.
+                // Do not destroy potentially delivered silver, and do not replay an ambiguous payment.
+                parcel.uncertain=true;
+                UNContact.Instance?.LogEvent(parcel.reason+" — "+"UNPAY_Uncertain".Translate(amount));
+                return;
+            }
+            if(result==0)
+            {
+                foreach(var silver in contents)if(!silver.Destroyed&&silver.MapHeld==null)silver.Destroy();
+                parcel.uncertain=false;parcel.blockReason=3;
+                return;
+            }
+            // Positive spawn evidence: commit debit before notification. No landing/collection
+            // claim is made; normal in-game loss after dispatch does not trigger a replacement.
+            parcel.amount=UNMissionPolicy.RemainingAfterDropDispatch(amount,true);
+            var reward=parcel.questId<0?null:Find.QuestManager.QuestsListForReading.FirstOrDefault(q=>q.id==parcel.questId)?.GetFirstPartOfType<UNMissionReward>();
+            if(reward!=null)
+            {
+                if(reward.paymentTotal<=0)reward.paymentTotal=parcel.total>0?parcel.total:amount;
+                reward.paymentDispatched=Math.Min(reward.paymentTotal,reward.paymentDispatched+amount);
+            }
+            parcels.Remove(parcel);
+            try
+            {
+                UNContact.Instance?.LogEvent("UNM_PaymentPodJournal".Translate(parcel.reason,amount));
+                Find.LetterStack.ReceiveLetter("UNM_PaymentPodTitle".Translate(),"UNM_PaymentPodText".Translate(parcel.reason,amount),
+                    LetterDefOf.PositiveEvent,new LookTargets(spot,map));
+            }
+            catch(Exception ex){Log.Error("[UN Peacekeepers] Silver pod notification failed: "+ex);}
+        }
+        static bool SafeSilverSpot(IntVec3 spot,Map map)=>spot.IsValid&&spot.InBounds(map)&&!spot.Roofed(map)&&
+            !spot.Fogged(map)&&spot.Standable(map)&&DropCellFinder.SkyfallerCanLandAt(spot,map,ThingDefOf.DropPodIncoming.size,Faction.OfPlayer);
         public static void Open(Pawn pawn=null)
         {
             Find.WindowStack.WindowOfType<Dialog_UNMissions>()?.Close();
@@ -525,22 +643,17 @@ namespace UNPeacekeepers
     // A native, save-persistent choice letter. ChoiceLetter serializes its Quest reference.
     public sealed class UNSupplementLetter:ChoiceLetter
     {
-        bool Available=>quest!=null&&quest.State==QuestState.NotYetAccepted&&
+        private float shownDifficulty=-1f;
+        bool Available=>UNMissionManager.OfferOpen(quest)&&
             quest.GetFirstPartOfType<UNMissionReward>()?.optional==true;
         public override bool CanShowInLetterStack=>base.CanShowInLetterStack&&Available;
         public override bool CanDismissWithRightClick=>false;
-        static Pawn Accepter(Quest q)
-        {
-            var home=q?.GetFirstPartOfType<UNMissionReward>()?.home;
-            return Find.Maps.Where(m=>m.IsPlayerHome).OrderByDescending(m=>m==home)
-                .SelectMany(m=>m.mapPawns.FreeColonistsSpawned)
-                .FirstOrDefault(p=>p.Faction==Faction.OfPlayer&&!p.Dead&&!p.Downed);
-        }
+        static Pawn Accepter(Quest q)=>UNMissionManager.OptionalAccepter(q);
         public static string Brief(Quest q)
         {
             var r=q?.GetFirstPartOfType<UNMissionReward>();
             var o=q?.GetFirstPartOfType<UNMissionObjective>();
-            if(r==null||o==null||q.State!=QuestState.NotYetAccepted)return "UNM_SupplementUnavailable".Translate();
+            if(r==null||o==null||!UNMissionManager.OfferOpen(q))return "UNM_SupplementUnavailable".Translate();
             var lines=new List<string>{
                 q.name,
                 "",
@@ -560,16 +673,8 @@ namespace UNPeacekeepers
         }
         public override void OpenLetter()
         {
-            if(Available)
-            {
-                var r=quest.GetFirstPartOfType<UNMissionReward>();
-                var o=quest.GetFirstPartOfType<UNMissionObjective>();
-                if(o!=null&&o.RefreshOffer(UNMod.MissionDifficulty))
-                {
-                    r.difficulty=UNMod.MissionDifficulty;r.silver=UNMissionPolicy.ScaledSilver(r.tier,r.difficulty);
-                    quest.description=o.OfferDescription;
-                }
-            }
+            if(Available)UNMissionManager.Instance?.RefreshTerms(quest);
+            shownDifficulty=quest?.GetFirstPartOfType<UNMissionReward>()?.difficulty??-1f;
             Text=Brief(quest);
             base.OpenLetter();
         }
@@ -583,16 +688,23 @@ namespace UNPeacekeepers
                 var accept=new DiaOption("UN_C_Accept".Translate()){resolveTree=true,action=()=>{
                     if(!Available)return;
                     var current=Accepter(quest);
+                    var reward=quest.GetFirstPartOfType<UNMissionReward>();
+                    if(reward==null||Math.Abs(shownDifficulty-reward.difficulty)>0.001f||
+                        Math.Abs(shownDifficulty-UNMod.MissionDifficulty)>0.001f)
+                    {
+                        UNMissionManager.Instance?.RefreshTerms(quest);
+                        Messages.Message("UNM_TermsChanged".Translate(),MessageTypeDefOf.RejectInput,false);return;
+                    }
                     var block=UNMissionManager.Instance?.AcceptBlock(quest,current)??(UNMissionManager.Instance==null?"UN_C_Unavailable".Translate().ToString():null);
                     if(block!=null){Messages.Message(block,MessageTypeDefOf.RejectInput,false);return;}
                     quest.Accept(current);
                     if(quest.State!=QuestState.NotYetAccepted)Find.LetterStack.RemoveLetter(this);
                 }};
-                string reason=manager==null?"UN_C_Unavailable".Translate().ToString():pawn==null?"UNM_SupplementNoPawn".Translate().ToString():manager.AcceptBlock(quest,pawn);
+                string reason=manager==null?"UN_C_Unavailable".Translate().ToString():pawn==null?"UNM_SupplementNoPawn".Translate().ToString():manager.AcceptBlock(quest,pawn,false);
                 if(reason!=null)accept.Disable(reason);
                 yield return accept;
                 yield return new DiaOption("UNM_SupplementDecline".Translate()){resolveTree=true,action=()=>{
-                    if(Available)quest.End(QuestEndOutcome.InvalidPreAcceptance,false,false);
+                    if(Available)UNMissionManager.Instance?.CloseSupplement(quest,false);
                     if(!Available)Find.LetterStack.RemoveLetter(this);
                 }};
                 yield return Option_Postpone;
@@ -608,26 +720,36 @@ namespace UNPeacekeepers
         public override void DoWindowContents(Rect rect)
         {
             var manager=UNMissionManager.Instance;
-            Widgets.Label(new Rect(0,0,rect.width,30),"UNM_Pool".Translate(manager?.ActiveCount??0));
+            Widgets.Label(new Rect(0,0,rect.width,30),"UNPAY_Pool".Translate(manager?.ActiveCount??0,manager?.OptionalActiveCount??0));
+            if(manager==null)return;
             // Live active missions first, including surviving legacy orders and the ultimatum.
             var quests=Find.QuestManager.QuestsListForReading.Where(q=>q.State==QuestState.Ongoing&&
                 (UNMissionManager.IsManaged(q)||q.GetFirstPartOfType<QuestPart_UNSupply>()!=null||q.GetFirstPartOfType<QuestPart_UNUltimatum>()!=null))
                 .Concat(manager?.Offers??Enumerable.Empty<Quest>()).Distinct().ToList();
+            // Update terms before measuring or drawing text, never in the layout acceptance predicate.
+            foreach(var offer in quests.Where(UNMissionManager.OfferOpen))manager.RefreshTerms(offer);
             float w=rect.width-24;
-            var labels=quests.Select(q=>q.name+"\n"+q.description+"\n"+string.Join("\n",q.PartsListForReading.Select(p=>p.DescriptionPart).Where(d=>!d.NullOrEmpty()))).ToList();
-            var heights=labels.Select(l=>Text.CalcHeight(l,w-20)+90).ToList();
+            var labels=quests.Select(q=>q.name+"\n"+(q.GetFirstPartOfType<UNMissionReward>()?.optional==true?"UNPAY_Optional".Translate().ToString()+"\n":"")+q.description+"\n"+string.Join("\n",q.PartsListForReading.Select(p=>p.DescriptionPart).Where(d=>!d.NullOrEmpty()))).ToList();
+            var blocks=quests.Select(q=>q.State==QuestState.NotYetAccepted?
+                manager.AcceptBlock(q,q.GetFirstPartOfType<UNMissionReward>()?.optional==true?UNMissionManager.OptionalAccepter(q):pawn,false):null).ToList();
+            var heights=labels.Select((l,i)=>Text.CalcHeight(l,w-20)+100+(blocks[i]==null?0:Text.CalcHeight(blocks[i],w-20)+8)).ToList();
             Widgets.BeginScrollView(new Rect(0,35,rect.width,rect.height-85),ref scroll,new Rect(0,0,w,Math.Max(80,heights.Sum())));
             if(quests.Count==0)Widgets.Label(new Rect(5,5,w-10,70),"UNM_Empty".Translate());
             float y=0;
             for(int i=0;i<quests.Count;i++)
             {
                 var q=quests[i];Widgets.DrawHighlight(new Rect(0,y,w,heights[i]-5));
-                Widgets.Label(new Rect(10,y+5,w-20,heights[i]-60),labels[i]);
+                float labelHeight=Text.CalcHeight(labels[i],w-20);
+                Widgets.Label(new Rect(10,y+5,w-20,labelHeight+4),labels[i]);
                 if(q.State==QuestState.NotYetAccepted)
                 {
-                    string block=manager.AcceptBlock(q,pawn);
-                    if(block==null){if(Widgets.ButtonText(new Rect(10,y+heights[i]-48,210,30),"UN_C_Accept".Translate()))q.Accept(pawn);}
-                    else Widgets.Label(new Rect(10,y+heights[i]-48,w-20,40),block);
+                    bool optional=q.GetFirstPartOfType<UNMissionReward>()?.optional==true;
+                    var accepter=optional?UNMissionManager.OptionalAccepter(q):pawn;
+                    string block=blocks[i];
+                    if(block!=null)Widgets.Label(new Rect(10,y+labelHeight+12,w-20,Text.CalcHeight(block,w-20)+4),block);
+                    if(block==null&&Widgets.ButtonText(new Rect(10,y+heights[i]-48,210,30),"UN_C_Accept".Translate()))q.Accept(accepter);
+                    if(optional&&Widgets.ButtonText(new Rect(230,y+heights[i]-48,210,30),"UNM_SupplementDecline".Translate()))
+                        manager.CloseSupplement(q,false);
                 }
                 else if(UNMissionManager.IsManaged(q)&&Widgets.ButtonText(new Rect(10,y+heights[i]-48,310,30),"UNM_Cancel".Translate()))
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation("UNM_CancelConfirm".Translate(),()=>manager.Complete(q.id,false),true));

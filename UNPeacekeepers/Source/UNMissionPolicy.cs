@@ -13,6 +13,16 @@ namespace UNPeacekeepers
         public static int DisplayMinutes(int ticks)
             =>(int)(((long)Math.Max(0,ticks)*1440+59999)/60000);
         public static bool HasOfferDeadline(int tick)=>tick>0&&tick<int.MaxValue;
+        public static bool OfferExpired(int deadline,int now)=>HasOfferDeadline(deadline)&&now>=deadline;
+        public static int SupplyRemaining(int required,int delivered)=>Math.Max(0,required-Math.Max(0,delivered));
+        public static int SupplyTake(int required,int delivered,int available)=>Math.Min(SupplyRemaining(required,delivered),Math.Max(0,available));
+        public static bool CanQueueSilver(bool queued,int recordedTotal,bool existingParcel)=>!queued&&recordedTotal==0&&!existingParcel;
+        // An exception during an attempted spawn is ambiguous without positive spawn evidence.
+        // 0=retryable, 1=dispatched, 2=hold for review (never auto-replay).
+        public static int DispatchOutcome(bool spawned,bool spawnAttempted,bool cargoExposed)
+            =>spawned?1:spawnAttempted||cargoExposed?2:0;
+        public static bool CanDispatchSilver(int pending,bool uncertain,int now,int retryAt)
+            =>pending>0&&!uncertain&&now>=retryAt;
         public static int RemainingAfterDropDispatch(int pending,bool dispatched)=>dispatched?0:Math.Max(0,pending);
         public static int RemainingAfterPlacement(int pending,int placed)=>Math.Max(0,pending-Math.Max(0,placed));
         // A native terminal state, acceptance and a proven objective are required for success.

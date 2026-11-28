@@ -33,7 +33,7 @@
   <UNM_RepairOutcome>Spielstandreparatur: gespeichertes Missionsergebnis für „{0}“ wird nachgeholt.</UNM_RepairOutcome>
   <UNM_RepairPaymentUnknown>Alte Mission „{0}“ war bereits als abgerechnet gespeichert. Die tatsächliche Auszahlung ist nicht eindeutig nachweisbar; keine erneute Gunst- oder Silberbuchung.</UNM_RepairPaymentUnknown>
   <UNM_RepairTechnical>Spielstandreparatur: „{0}“ hat unvollständige technische Missionsdaten und wird ohne zusätzliche Gunststrafe beendet. Keine Erfolgsbelohnung.</UNM_RepairTechnical>
-  <UNM_PaymentPodJournal>Silber für „{0}“: {1} Silber per Transportkapsel zur Heimatkarte geliefert.</UNM_PaymentPodJournal>
+  <UNM_PaymentPodJournal>Silber für „{0}“: {1} Silber per Transportkapsel zur Heimatkarte verschickt.</UNM_PaymentPodJournal>
   <UNM_PaymentPodTitle>UN-Silberbelohnung</UNM_PaymentPodTitle>
   <UNM_PaymentPodText>Für „{0}“ liefert die UN {1} Silber per Transportkapsel. Springe zur Landestelle, um die Belohnung zu finden.</UNM_PaymentPodText>
   <UNM_SupplementLetterTitle>Freiwilliger Zusatzauftrag</UNM_SupplementLetterTitle>
@@ -48,4 +48,23 @@
   <UNM_SupplementDecline>Ablehnen</UNM_SupplementDecline>
   <UNM_SupplementUnavailable>Dieses Angebot ist nicht mehr verfügbar.</UNM_SupplementUnavailable>
   <UNM_SupplementNoPawn>Zur Annahme wird ein verfügbarer Kolonist auf einer Heimatkarte benötigt.</UNM_SupplementNoPawn>
+  <UNPAY_NotEarned>Auszahlung: erst nach vollständigem Erfolg.</UNPAY_NotEarned>
+  <UNPAY_NoReward>Auszahlung: keine Erfolgsbelohnung.</UNPAY_NoReward>
+  <UNPAY_Settling>Auszahlung: Abrechnung ausstehend.</UNPAY_Settling>
+  <UNPAY_Queued>Auszahlung: {0} Silber vorgemerkt.</UNPAY_Queued>
+  <UNPAY_NoHome>Auszahlung: {0} Silber offen – keine Heimatkarte verfügbar.</UNPAY_NoHome>
+  <UNPAY_NoLanding>Auszahlung: {0} Silber offen – kein sicherer Landeplatz.</UNPAY_NoLanding>
+  <UNPAY_Retry>Auszahlung: {0} Silber offen – Zustellung wird erneut versucht.</UNPAY_Retry>
+  <UNPAY_Uncertain>Auszahlung: {0} Silber mit unklarem Versandstatus. Keine automatische Wiederholung.</UNPAY_Uncertain>
+  <UNPAY_Dispatched>Auszahlung: {0} Silber per Drop-Pod verschickt (Abholung am Landeort).</UNPAY_Dispatched>
+  <UNPAY_LegacyUnknown>Auszahlung: ältere Abrechnung; Einzelstatus nicht nachweisbar. Keine erneute Buchung.</UNPAY_LegacyUnknown>
+  <UNPAY_QuestId>Auftrag #{0}: {1}</UNPAY_QuestId>
+  <UNPAY_OldParcel>Ältere vorgemerkte Zahlung: {0}</UNPAY_OldParcel>
+  <UNPAY_PendingTitle>Offene und ungeklärte Silberauszahlungen</UNPAY_PendingTitle>
+  <UNPAY_HistoryTitle>Verlauf</UNPAY_HistoryTitle>
+  <UNPAY_SupplyLine>{0}: {1}/{2} geliefert | fehlen: {3}</UNPAY_SupplyLine>
+  <UNPAY_Optional>Freiwilliger Zusatzauftrag – kein Hauptmissionsplatz</UNPAY_Optional>
+  <UNPAY_Declined>Zusatzauftrag abgelehnt – keine Strafe.</UNPAY_Declined>
+  <UNPAY_Expired>Annahmefrist abgelaufen – keine Strafe.</UNPAY_Expired>
+  <UNPAY_Pool>UN-Missionspool · Hauptaufträge {0}/5 aktiv · Zusatzaufträge {1} aktiv</UNPAY_Pool>
 </LanguageData>

@@ -88,7 +88,7 @@ namespace UNPeacekeepers
                 string header=UNQuestDisplay.Header(quest,UNMissionPolicy.RemainingTicks(600000,quest.TicksSinceAccepted));
                 if(quest.State==QuestState.EndedFailed)return header+"\n"+UNQuestDisplay.Failed((UNMissionFailure)failureReason);
                 if(quest.State==QuestState.Ongoing)
-                    return header+"\n"+"UNQ_LegacyProgress".Translate(progress.Delivered,Required)+"\n"+UNQuestDisplay.Next("UNQ_NextLegacySupply".Translate());
+                    return header+"\n"+"UNPAY_SupplyLine".Translate(Supply.LabelCap,progress.Delivered,Required,UNMissionPolicy.SupplyRemaining(Required,progress.Delivered))+"\n"+UNQuestDisplay.Next("UNQ_NextLegacySupply".Translate());
                 return header;
             }
         }

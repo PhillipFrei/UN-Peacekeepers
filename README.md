@@ -1,10 +1,10 @@
-# UN Peacekeepers 0.3.6 alpha — packages 1–4 development build
+# UN Peacekeepers 0.3.6 alpha — packages 1–5 development build
 
 Based on release/0.3.4-alpha (`d43f2477`) with centralized quest completion, simplified automatic site clearance, individual guest stays and saved-quest repair. This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
 
 ## Package 1 — live quest displays
 
-Uniform remaining time (game days, hours, minutes, rounded up), offer deadline or no fixed deadline, next-step text, persisted failure reasons, live active-first mission list in UN Central including old supply contracts and ultimatum. Existing saved failure reasons are unknown unless recorded; no retrospective assumptions. All original mission deadlines, guest rules, reward amounts, map cleanup and combat conditions are retained. Packages 5–6 are not yet integrated. CI-base is not the final installable version.
+Uniform remaining time (game days, hours, minutes, rounded up), offer deadline or no fixed deadline, next-step text, persisted failure reasons, live active-first mission list in UN Central including old supply contracts and ultimatum. Existing saved failure reasons are unknown unless recorded; no retrospective assumptions. All original mission deadlines, guest rules, reward amounts, map cleanup and combat conditions are retained. Package 6 is not yet integrated. CI-base is not the final installable version.
 
 ## Package 2 — guest stay and evacuation
 
@@ -17,6 +17,10 @@ All original patients must be accounted for. A living, fully recovered patient s
 ## Package 4 — military objectives and handover
 
 Defense duration is shown before acceptance and counts down from first map generation, with protected civilian/structure and remaining enemy counts. Guards and attackers count as neutralized when dead, downed, player prisoners, or observed leaving the map into the world; confirmed flight is revoked on return. A weaponless but combat-capable pawn is not neutralized. Exact enemy IDs and confirmed deaths/exits are saved; missing references without proof are not automatic success. Elite arrest and ultimatum display target/pickup phases and require verified boarding and actual timely departure. Failed pickup requests are throttled to one game hour. Original deadlines, combat budget, rewards and cleanup remain unchanged. Actual AI and shuttle behavior still require game testing.
+
+## Package 5 — supplies, optional offers and payouts
+
+Required, delivered and missing quantities are shown separately in live mission and central views. Real delivery consumes only missing goods; exact validated completion is required. Optional offers have explicit acceptance expiry checks, no penalty for decline/expiry, a separate active count and direct Accept/Decline in both the choice letter and mission pool. Optional acceptance may select a valid home colonist; normal main acceptance conditions remain. Updated difficulty terms are shown before acceptance. New silver parcels use the exact quest ID, persist totals and dispatch status, and are retried hourly if safely blocked. A persisted pre-spawn uncertainty guard prevents ambiguous native/mod spawn outcomes from automatically paying twice; such payments are listed for review. Dispatch is not proof of landing or collection. Old unlinked parcels are retained without guessing their quest identity; old settled rewards are never automatically replayed. Reward amounts and mission durations unchanged.
 
 ## Install
 
