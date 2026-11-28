@@ -30,4 +30,7 @@
   <UNM_Supplement>Freiwillige Zusatzhilfe: {0}</UNM_Supplement>
   <UNM_Optional>Zusätzliche Hilfe ist möglich. Das Angebot läuft nach 3 Tagen ab; Nichtannahme ist folgenlos. Annahme zählt nicht gegen die fünf Missionsplätze, setzt aber die Inaktivitätsfrist zurück. Danach gelten eigenes Zeitlimit, volle Stufenbelohnung und −5 bei Scheitern. Das Ergebnis der Hauptmission bleibt bestehen.</UNM_Optional>
   <UNM_TermsChanged>Die Schwierigkeit wurde geändert. Die angezeigten Mengen und Belohnungen sind aktualisiert; bitte nochmals prüfen und dann annehmen.</UNM_TermsChanged>
+  <UNM_RepairOutcome>Spielstandreparatur: gespeichertes Missionsergebnis für „{0}“ wird nachgeholt.</UNM_RepairOutcome>
+  <UNM_RepairPaymentUnknown>Alte Mission „{0}“ war bereits als abgerechnet gespeichert. Die tatsächliche Auszahlung ist nicht eindeutig nachweisbar; keine erneute Gunst- oder Silberbuchung.</UNM_RepairPaymentUnknown>
+  <UNM_RepairTechnical>Spielstandreparatur: „{0}“ hat unvollständige technische Missionsdaten und wird ohne zusätzliche Gunststrafe beendet. Keine Erfolgsbelohnung.</UNM_RepairTechnical>
 </LanguageData>

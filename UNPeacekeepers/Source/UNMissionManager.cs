@@ -28,10 +28,12 @@ namespace UNPeacekeepers
         public Faction supported;
         public Map home;
         public bool started, settled, optional, supplementOffered;
-        public bool silverQueued, unGoodwillAttempted, supportedGoodwillAttempted;
+        public bool silverQueued, unGoodwillAttempted, supportedGoodwillAttempted, legacyRepairReported, technicalRepair;
         public int parentId=-1;
         public override bool RequiresAccepter=>true;
-        public override string DescriptionPart=>"UNM_Reward".Translate(silver,UNMissionPolicy.Goodwill(tier),supported?.Name??"—",(difficulty*100).ToString("0")).ToString();
+        public override string DescriptionPart=>"UNM_Reward".Translate(silver,UNMissionPolicy.Goodwill(tier),supported?.Name??"—",(difficulty*100).ToString("0")).ToString()+
+            (legacyRepairReported?"\n"+"UNM_RepairPaymentUnknown".Translate(quest?.name??"—").ToString():"")+
+            (technicalRepair?"\n"+"UNM_RepairTechnical".Translate(quest?.name??"—").ToString():"");
         public override void ExposeData()
         {
             base.ExposeData();Scribe_Values.Look(ref tier,"tier",0);Scribe_Values.Look(ref slot,"slot",0);
@@ -40,6 +42,7 @@ namespace UNPeacekeepers
             Scribe_Values.Look(ref optional,"optional",false);Scribe_Values.Look(ref supplementOffered,"supplementOffered",false);Scribe_Values.Look(ref parentId,"parentId",-1);
             Scribe_Values.Look(ref started,"started",false);Scribe_Values.Look(ref settled,"settled",false);
             Scribe_Values.Look(ref silverQueued,"silverQueued",false);Scribe_Values.Look(ref unGoodwillAttempted,"unGoodwillAttempted",false);Scribe_Values.Look(ref supportedGoodwillAttempted,"supportedGoodwillAttempted",false);
+            Scribe_Values.Look(ref legacyRepairReported,"legacyRepairReported",false);Scribe_Values.Look(ref technicalRepair,"technicalRepair",false);
         }
     }
     public sealed class UNMissionManager : GameComponent
@@ -48,6 +51,8 @@ namespace UNPeacekeepers
         private List<Quest> supplementOffers=new List<Quest>();
         private List<UNSilverParcel> parcels=new List<UNSilverParcel>();
         private int nextInactivity=-1, nextCheck, nextCompletionCheck;
+        private bool repairOnLoad;
+        private readonly HashSet<int> restoredThisLoad=new HashSet<int>();
         internal static Faction exactRewardFaction;
         public UNMissionManager(Game game){}
         public static UNMissionManager Instance=>Current.Game?.GetComponent<UNMissionManager>();
@@ -61,13 +66,30 @@ namespace UNPeacekeepers
             Scribe_Collections.Look(ref supplementOffers,"unSupplementOffers",LookMode.Reference);
             Scribe_Collections.Look(ref parcels,"unMissionParcels",LookMode.Deep);
             Scribe_Values.Look(ref nextInactivity,"unMissionNextInactivity",-1);
-            if(Scribe.mode==LoadSaveMode.PostLoadInit){if(slots==null)slots=new List<UNMissionSlot>();if(parcels==null)parcels=new List<UNSilverParcel>();if(supplementOffers==null)supplementOffers=new List<Quest>();}
+            if(Scribe.mode==LoadSaveMode.PostLoadInit)
+            {
+                if(slots==null)slots=new List<UNMissionSlot>();
+                for(int i=0;i<slots.Count;i++)if(slots[i]==null)slots[i]=new UNMissionSlot();
+                if(parcels==null)parcels=new List<UNSilverParcel>();
+                parcels.RemoveAll(p=>p==null);
+                if(supplementOffers==null)supplementOffers=new List<Quest>();
+                repairOnLoad=true;restoredThisLoad.Clear();
+            }
         }
         public override void GameComponentTick()
         {
-            if(Current.ProgramState!=ProgramState.Playing||Find.FactionManager==null)return;
+            if(Current.ProgramState!=ProgramState.Playing||Find.FactionManager==null||Find.QuestManager==null||Find.WorldObjects==null)return;
             int now=Find.TickManager.TicksGame;
-            if(now>=nextCompletionCheck){nextCompletionCheck=now+250;ProcessCompletions();}
+            if(now>=nextCompletionCheck)
+            {
+                nextCompletionCheck=now+250;
+                if(repairOnLoad)
+                {
+                    try{RestoreOfferReferences();ProcessCompletions(true);repairOnLoad=false;}
+                    catch(Exception ex){Log.Error("[UN Peacekeepers] Save repair will retry: "+ex);return;}
+                }
+                else ProcessCompletions(false);
+            }
             if(now<nextCheck)return;nextCheck=now+2500;
             if(nextInactivity<0)nextInactivity=now+UNMissionPolicy.InactivityTicks;
             var un=Authorization.GetUN();
@@ -167,31 +189,116 @@ namespace UNPeacekeepers
             var q=Find.QuestManager.QuestsListForReading.FirstOrDefault(x=>x.id==questId);
             if(q==null||q.State!=QuestState.Ongoing)return;
             var objective=q.GetFirstPartOfType<UNMissionObjective>();
-            if(objective==null || (success&&!objective.CanRewardSuccess))return;
+            if(objective==null)
+            {
+                if(!success){var r=q.GetFirstPartOfType<UNMissionReward>();if(r!=null){r.technicalRepair=true;r.settled=true;}q.End(QuestEndOutcome.Fail);}
+                return;
+            }
+            if(success&&!objective.CanRewardSuccess)return;
             objective.RequestCompletion(success);
         }
-        void ProcessCompletions()
+        void RestoreOfferReferences()
         {
-            // Snapshot: native End and supplemental offers can mutate QuestManager's collection.
-            foreach(var q in Find.QuestManager.QuestsListForReading.Where(IsManaged).ToList())
+            while(slots.Count<10)slots.Add(new UNMissionSlot());
+            var quests=Find.QuestManager.QuestsListForReading.Where(IsManaged).ToList();
+            // The quest itself owns the original slot, difficulty and recipient. Never reroll these.
+            for(int i=0;i<slots.Count;i++)
+            {
+                var slot=slots[i];
+                if(slot.offer!=null&&slot.offer.EverAccepted)
+                    slot.refillAt=UNMissionPolicy.RestoredRefillAt(slot.refillAt,slot.offer.acceptanceTick);
+                if(slot.offer==null||slot.offer.State!=QuestState.NotYetAccepted)slot.offer=null;
+            }
+            foreach(var q in quests.Where(q=>q.EverAccepted))
+            {
+                var r=q.GetFirstPartOfType<UNMissionReward>();
+                if(!r.optional&&r.slot>=0&&r.slot<10)
+                    slots[r.slot].refillAt=UNMissionPolicy.RestoredRefillAt(slots[r.slot].refillAt,q.acceptanceTick);
+            }
+            supplementOffers=supplementOffers.Where(q=>q!=null&&q.State==QuestState.NotYetAccepted&&IsManaged(q)).Distinct().ToList();
+            foreach(var q in quests.Where(q=>q.State==QuestState.NotYetAccepted).OrderBy(q=>q.id))
+            {
+                var r=q.GetFirstPartOfType<UNMissionReward>();
+                if(r.optional){if(!supplementOffers.Contains(q))supplementOffers.Add(q);continue;}
+                if(r.slot<0||r.slot>=10)continue;
+                if(slots[r.slot].offer==null)slots[r.slot].offer=q;
+                else if(slots[r.slot].offer!=q)
+                    q.End(QuestEndOutcome.InvalidPreAcceptance,false,false);
+            }
+        }
+        static void RepairJournal(Quest q,string key)
+        {
+            string message=key.Translate(q.name).ToString();
+            UNContact.Instance?.LogEvent(message);
+            Log.Message("[UN Peacekeepers] Quest "+q.id+": "+message);
+        }
+        void ReportLegacyPayment(Quest q,UNMissionReward r,UNMissionObjective o)
+        {
+            if(r==null||r.legacyRepairReported||o?.CanRewardSuccess!=true||
+                !UNMissionPolicy.LegacyPaymentUncertain(r.settled,r.silverQueued,r.unGoodwillAttempted,r.supportedGoodwillAttempted))return;
+            r.legacyRepairReported=true;
+            TryRewardStep(q,"legacy payment notice",()=>RepairJournal(q,"UNM_RepairPaymentUnknown"));
+        }
+        void ProcessCompletions(bool loading)
+        {
+            bool retryLoad=false;
+            foreach(var q in Find.QuestManager.QuestsListForReading.ToList())
             {
                 try
                 {
+                    if(q.State==QuestState.Ongoing)
+                    {
+                        var supply=q.GetFirstPartOfType<QuestPart_UNSupply>();
+                        if(supply!=null)supply.RepairCompletion();
+                    }
+                    if(!IsManaged(q))continue;
                     var r=q.GetFirstPartOfType<UNMissionReward>();
                     var o=q.GetFirstPartOfType<UNMissionObjective>();
-                    if(q.State==QuestState.Ongoing && o?.CompletionRequested==true)
+                    if(q.State==QuestState.Ongoing)
                     {
-                        q.End(o.CanRewardSuccess?QuestEndOutcome.Success:QuestEndOutcome.Fail);
+                        bool restored=o?.RestoreRecordedOutcome()==true;
+                        if(loading&&!restoredThisLoad.Contains(q.id))
+                        {
+                            if(o==null||(!o.CompletionRequested&&!o.RestoreLoadedState(q,r.parentId)))
+                            {
+                                // Corrupt data cannot earn a success; do not charge a gameplay
+                                // failure penalty for an unrecoverable technical setup.
+                                r.technicalRepair=true;r.settled=true;
+                                TryRewardStep(q,"technical repair notice",()=>RepairJournal(q,"UNM_RepairTechnical"));
+                                if(o!=null)o.RequestCompletion(false);
+                                else q.End(QuestEndOutcome.Fail);
+                            }
+                            else
+                            {
+                                r.started=true;
+                                if(restored||o.CompletionRequested)
+                                    TryRewardStep(q,"repair notice",()=>RepairJournal(q,"UNM_RepairOutcome"));
+                            }
+                            restoredThisLoad.Add(q.id);
+                        }
+                        if(q.State==QuestState.Ongoing&&o!=null)
+                        {
+                            ReportLegacyPayment(q,r,o);
+                            if(!o.CompletionRequested)o.PollMission();
+                            if(o.CompletionRequested)
+                                q.End(o.CanRewardSuccess?QuestEndOutcome.Success:QuestEndOutcome.Fail);
+                        }
                     }
                     if(q.State==QuestState.EndedSuccess||q.State==QuestState.EndedFailed)
                         Settle(q,r,o);
                 }
-                catch(Exception ex){Log.Error("[UN Peacekeepers] Quest completion retry for "+q.id+": "+ex);}
+                catch(Exception ex)
+                {
+                    if(loading&&!restoredThisLoad.Contains(q.id))retryLoad=true;
+                    Log.Error("[UN Peacekeepers] Quest completion retry for "+q.id+": "+ex);
+                }
             }
+            if(retryLoad)throw new InvalidOperationException("Some saved missions could not be inspected.");
         }
         void Settle(Quest q,UNMissionReward r,UNMissionObjective objective)
         {
             bool success=q.State==QuestState.EndedSuccess;
+            if(success)ReportLegacyPayment(q,r,objective);
             if(r==null||!UNMissionPolicy.CanSettle(q.EverAccepted,r.settled,success,q.State==QuestState.EndedFailed,objective?.CanRewardSuccess==true))return;
             var un=Authorization.GetUN();
             bool unAvailable=un!=null&&!un.defeated&&!un.deactivated;

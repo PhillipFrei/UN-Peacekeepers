@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 namespace UNPeacekeepers
 {
     public static class UNMissionPolicy
@@ -21,6 +22,19 @@ namespace UNPeacekeepers
         public static bool GuestStayComplete(int since,int now)=>since>=0&&(long)now-since>=GuestStayTicks;
         public static int GuestTicksRemaining(int since,int now)=>since<0?GuestStayTicks:(int)Math.Max(0,Math.Min(GuestStayTicks,(long)since+GuestStayTicks-now));
         public static bool AllDeparted(int required,int departed)=>required>0&&departed==required;
+        // A saved explicit outcome takes precedence over reconstruction; never turn a recorded failure into success.
+        public static int RecordedOutcome(bool finished,bool achieved,bool delivered,bool shuttleConfirmed,bool guestsDeparted)
+            =>finished?(achieved?1:-1):achieved||delivered||shuttleConfirmed||guestsDeparted?1:0;
+        public static bool StoredDeliveryComplete(IList<int> required,IList<int> delivered,int goodsCount)
+        {
+            if(required==null||delivered==null||goodsCount<=0||required.Count!=goodsCount||delivered.Count!=goodsCount)return false;
+            for(int i=0;i<goodsCount;i++)if(required[i]<=0||delivered[i]!=required[i])return false;
+            return true;
+        }
+        public static bool LegacyPaymentUncertain(bool settled,bool silverQueued,bool unAttempted,bool supportedAttempted)
+            =>settled&&!silverQueued&&!unAttempted&&!supportedAttempted;
+        public static int RestoredRefillAt(int existing,int acceptedAt)
+            =>Math.Max(existing,acceptedAt+RefillTicks);
         public static int Threshold(int tier)=>tier==2?80:tier==1?50:0;
         public static int Goodwill(int tier)=>tier==2?30:tier==1?20:10;
         public static int BaseSilver(int tier)=>tier==2?10000:tier==1?5000:1500;

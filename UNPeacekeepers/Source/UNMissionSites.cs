@@ -328,9 +328,47 @@ namespace UNPeacekeepers
         private bool achieved;
         public bool CanRewardSuccess=>achieved;
         public bool CompletionRequested=>finished;
+        // Only durable proof, never the mere disappearance of a pawn, ship or world object.
+        public bool RestoreRecordedOutcome()
+        {
+            if(finished)return false;
+            int outcome=UNMissionPolicy.RecordedOutcome(finished,achieved,kind==0&&goods.All(g=>g!=null)&&
+                UNMissionPolicy.StoredDeliveryComplete(required,delivered,goods.Count),
+                kind!=0&&shuttleSent&&shuttleSatisfied,AllGuestsDeparted());
+            if(outcome!=1)return false;
+            Finish(true);return finished;
+        }
+        public bool RestoreLoadedState(Quest owningQuest,int parentId)
+        {
+            quest=owningQuest;
+            if(finished)return true;
+            if(destination==null||!destination.Spawned)
+            {
+                int id=supplement?parentId:owningQuest.id;
+                var matching=Find.WorldObjects.AllWorldObjects.OfType<UNMissionSite>().Where(site=>
+                    site.Spawned&&site.missionQuestId==id&&site.Tile==tile&&site.Faction==supportedFaction).ToList();
+                if(id>=0&&matching.Count==1)destination=matching[0];
+            }
+            // Never regenerate an already accepted map or replace a missing quest pawn.
+            if(!started)
+            {
+                if(destination==null||!destination.Spawned)return false;
+                started=true;
+            }
+            if(savedCollectionsMissing)return false;
+            if(kind==0&&(goods.Count==0||goods.Any(g=>g==null)||required.Count!=goods.Count||delivered.Count!=goods.Count||
+                required.Any(n=>n<=0)||delivered.Where((n,i)=>n<0||n>required[i]).Any()))return false;
+            if(generated&&kind!=0)
+            {
+                int present=targets.Where(p=>p!=null&&(!HasGuestPhase||!GuestDeparted(p))).Select(p=>p.ThingID).Distinct().Count();
+                if(patientCount<=0||present+(HasGuestPhase?departedGuests.Count:0)!=patientCount)return false;
+            }
+            if(guestPickupActive&&(shuttle==null||guestPickup.Count==0||guestPickup.Any(p=>p==null)))return false;
+            return true;
+        }
         public void RequestCompletion(bool success)=>Finish(success);
         private QuestPart_ExtraFaction custody;
-        private bool started,generated,finished,shuttleSent,shuttleSatisfied;
+        private bool started,generated,finished,shuttleSent,shuttleSatisfied,savedCollectionsMissing;
         private int began=-1,nextPoll;
         private TransportShip shuttle;
         // Stable ThingIDs survive individual exits and save/load, even if a world pawn is discarded.
@@ -350,7 +388,7 @@ namespace UNPeacekeepers
             pawn.guest!=null&&pawn.guest.GuestStatus==GuestStatus.Guest;
         public int DurationTicks=>durationTicks;
         public string OfferDescription=>"UNMS_Kind".Translate()+": "+("UNMS_Kind"+kind).Translate()+"\n"+"UNMS_Destination".Translate(destination?.Label??"UNMS_Camp".Translate().ToString(),tile.ToString())+"\n"+"UNMS_Faction".Translate(supportedFaction?.Name??"—")+"\n"+
-            (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+(kind==1&&bionicCase?"\n"+"UNMS_BionicGoal".Translate().ToString():"")+"\n"+"UNMS_Time".Translate(durationTicks/60000)+
+            (kind==0?string.Join("\n",goods.Select((g,i)=>(g?.LabelCap.ToString()??"—")+": "+(i<delivered.Count?delivered[i]:0)+"/"+(i<required.Count?required[i]:0))):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+(kind==1&&bionicCase?"\n"+"UNMS_BionicGoal".Translate().ToString():"")+"\n"+"UNMS_Time".Translate(durationTicks/60000)+
             (enemyFaction!=null?"\n"+"UNMS_Enemy".Translate(enemyFaction.Name,enemyBudget.ToString("0")):"\n"+"UNMS_Peaceful".Translate());
         public override string DescriptionPart=>started?("UNMS_Remaining".Translate(Math.Max(0,durationTicks-quest.TicksSinceAccepted)/60000f)+"\n"+
             (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_NameTargets".Translate(string.Join(", ",targets.Where(p=>p!=null).Select(p=>p.LabelShortCap.ToString()))).ToString()+
@@ -412,8 +450,21 @@ namespace UNPeacekeepers
             Scribe_Collections.Look(ref departedGuests,"unDepartedGuests",LookMode.Value);
             Scribe_Collections.Look(ref guestPickup,"unGuestPickup",LookMode.Reference);
             Scribe_Values.Look(ref guestPickupActive,"unGuestPickupActive",false);
+            Scribe_Values.Look(ref savedCollectionsMissing,"unSavedCollectionsMissing",false);
             if(Scribe.mode==LoadSaveMode.PostLoadInit)
             {
+                // Older saves have no guest collections; defaults are safe. Core missing collections are not proof.
+                savedCollectionsMissing|=goods==null||required==null||delivered==null||targets==null||
+                    (generated&&(kind==4||kind==5)&&(enemies==null||protectedThings==null));
+                if(goods==null)goods=new List<ThingDef>();
+                if(required==null)required=new List<int>();
+                if(delivered==null)delivered=new List<int>();
+                if(baseRequired==null)baseRequired=new List<int>();
+                if(targets==null)targets=new List<Pawn>();
+                if(enemies==null)enemies=new List<Pawn>();
+                if(allies==null)allies=new List<Pawn>();
+                if(protectedThings==null)protectedThings=new List<Thing>();
+                if(ownedStructures==null)ownedStructures=new List<Thing>();
                 if(guestSince==null)guestSince=new Dictionary<string,int>();
                 if(departedGuests==null)departedGuests=new HashSet<string>();
                 if(guestPickup==null)guestPickup=new List<Pawn>();
@@ -422,6 +473,12 @@ namespace UNPeacekeepers
         public override void QuestPartTick()
         {
             base.QuestPartTick();
+            PollMission();
+        }
+        // The manager also calls this for accepted quests, in case the old activation signal
+        // was lost. One shared poll timer prevents double processing.
+        public void PollMission()
+        {
             if(!started||finished||quest.State!=QuestState.Ongoing)return;
             if(Find.TickManager.TicksGame<nextPoll)return;nextPoll=Find.TickManager.TicksGame+250;
             if(HasGuestPhase&&AllGuestsDeparted()){Finish(true);return;}
@@ -430,6 +487,7 @@ namespace UNPeacekeepers
             if(custody!=null)custody.affectedPawns=targets;
             if(generated&&(kind==4||kind==5))
             {
+                if(targets.Count!=patientCount||patientCount<=0||protectedThings.Count==0){Finish(false);return;}
                 if(protectedThings.Any(t=>t==null||t.Destroyed)){Finish(false);return;}
                 if(Find.TickManager.TicksGame>=began+defenceTicks&&targets.All(p=>p.Spawned&&p.Map==destination.Map)&&enemies.All(p=>p!=null&&(p.Dead||p.Downed))){Finish(true);return;}
             }

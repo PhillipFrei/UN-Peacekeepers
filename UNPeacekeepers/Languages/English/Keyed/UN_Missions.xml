@@ -30,4 +30,7 @@
   <UNM_Supplement>Optional follow-up: {0}</UNM_Supplement>
   <UNM_Optional>Additional assistance is available for 3 days. Ignoring it has no penalty. Acceptance uses no normal mission slot and resets the inactivity clock. Once accepted, its own deadline, full tier reward and −5 failure penalty apply. The main mission outcome remains unchanged.</UNM_Optional>
   <UNM_TermsChanged>Difficulty changed. Displayed quantities and rewards have been updated; review them before accepting.</UNM_TermsChanged>
+  <UNM_RepairOutcome>Save repair: completing the recorded outcome for “{0}”.</UNM_RepairOutcome>
+  <UNM_RepairPaymentUnknown>Old mission “{0}” was already marked settled. Actual payment cannot be verified; no repeated goodwill or silver award.</UNM_RepairPaymentUnknown>
+  <UNM_RepairTechnical>Save repair: “{0}” has incomplete technical mission data and will end without an additional goodwill penalty. No success reward.</UNM_RepairTechnical>
 </LanguageData>

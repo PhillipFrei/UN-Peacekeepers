@@ -91,6 +91,23 @@ class Program
         Check(UNMissionPolicy.GuestTicksRemaining(-1,70000)==60000,"Relapse restarts stay");
         Check(UNMissionPolicy.GuestTicksRemaining(1234,61235)==0,"No negative countdown");
         Check(!UNMissionPolicy.AllDeparted(5,4)&&UNMissionPolicy.AllDeparted(5,5)&&!UNMissionPolicy.AllDeparted(0,0),"No partial or empty group completion");
+        // Migration only trusts persisted outcomes or complete positive evidence.
+        for(int mask=0;mask<32;mask++)
+        {
+            bool finished=(mask&1)!=0,achieved=(mask&2)!=0,deliveryProof=(mask&4)!=0,shuttleProof=(mask&8)!=0,guestProof=(mask&16)!=0;
+            int expected=finished?(achieved?1:-1):(achieved||deliveryProof||shuttleProof||guestProof?1:0);
+            Check(UNMissionPolicy.RecordedOutcome(finished,achieved,deliveryProof,shuttleProof,guestProof)==expected,"Saved outcome "+mask);
+        }
+        Check(UNMissionPolicy.StoredDeliveryComplete(new[]{10,20},new[]{10,20},2),"Complete saved delivery");
+        Check(!UNMissionPolicy.StoredDeliveryComplete(new[]{10,20},new[]{10,19},2),"Partial saved delivery");
+        Check(!UNMissionPolicy.StoredDeliveryComplete(new int[0],new int[0],0),"Empty saved delivery is not proof");
+        Check(!UNMissionPolicy.StoredDeliveryComplete(new[]{0},new[]{0},1),"Zero demand is not proof");
+        Check(!UNMissionPolicy.StoredDeliveryComplete(new[]{10},new[]{11},1),"Corrupt overdelivery is not proof");
+        Check(!UNMissionPolicy.StoredDeliveryComplete(new[]{10},null,1),"Missing saved data is not proof");
+        for(int mask=0;mask<16;mask++)
+            Check(UNMissionPolicy.LegacyPaymentUncertain((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0)==(mask==1),"Legacy payment guard "+mask);
+        Check(UNMissionPolicy.RestoredRefillAt(300000,100000)==300000,"Preserve later refill");
+        Check(UNMissionPolicy.RestoredRefillAt(0,100000)==280000,"Restore cooldown from original acceptance");
         // Failure after merging some silver must leave only the undelivered remainder.
         int pending=1500, physical=0;
         foreach(int actual in new[]{120,380}){pending=UNMissionPolicy.RemainingAfterPlacement(pending,actual);physical+=actual;}

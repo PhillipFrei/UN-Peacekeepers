@@ -88,7 +88,22 @@ namespace UNPeacekeepers
         public override void QuestPartTick()
         {
             base.QuestPartTick();
-            if(quest.State==QuestState.Ongoing && UNSupplyProgress.Expired(quest.TicksSinceAccepted))quest.End(QuestEndOutcome.Fail);
+            // Completion is handled by the manager outside quest iteration.
+            if(quest.State==QuestState.Ongoing && progress.Delivered<Required && UNSupplyProgress.Expired(quest.TicksSinceAccepted))quest.End(QuestEndOutcome.Fail);
+        }
+        public void RepairCompletion()
+        {
+            if(quest.State!=QuestState.Ongoing||progress.Delivered<Required)return;
+            if(!progress.Rewarded)
+            {
+                var un=Authorization.GetUN();
+                if(un==null||un.defeated||un.deactivated)return;
+                if(progress.TryClaim(Required))
+                    try{UNContact.ApplyPrisonGoodwill(un,Reward,quest.name);}
+                    catch(Exception ex){Log.Error("[UN Peacekeepers] Supply goodwill uncertain for "+quest.id+": "+ex);}
+            }
+            // An old Rewarded flag is not permission to pay again.
+            quest.End(QuestEndOutcome.Success);
         }
         public void Deliver(Pawn pawn)
         {
@@ -109,10 +124,7 @@ namespace UNPeacekeepers
             }
             if(progress.Delivered<Required)
             {Messages.Message("UN029_Progress".Translate(progress.Delivered,Required,Math.Max(0,600000-quest.TicksSinceAccepted)/60000f),MessageTypeDefOf.NeutralEvent,false);return;}
-            // Persist the guard before the authorized mutation; repeated callbacks cannot pay twice.
-            if(!progress.TryClaim(Required))return;
-            UNContact.ApplyPrisonGoodwill(un,Reward,quest.name);
-            quest.End(QuestEndOutcome.Success);
+            // The manager completes this accepted delivery on its next poll.
         }
     }
 }
