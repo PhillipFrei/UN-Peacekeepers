@@ -174,7 +174,12 @@ namespace UNPeacekeepers
                 var legacy=quest.GetFirstPartOfType<QuestPart_UNSupply>();
                 var ultimatumPart=quest.GetFirstPartOfType<QuestPart_UNUltimatum>();
                 // The detailed mission pool renders all objective conditions; the overview shows the live status.
-                if(mission!=null)Label(width,ref y,UNQuestDisplay.Header(quest,mission.RemainingTicks),Muted);
+                if(mission!=null)
+                {
+                    Label(width,ref y,UNQuestDisplay.Header(quest,mission.RemainingTicks),Muted);
+                    var guestSummary=mission.GuestSummary();
+                    if(!guestSummary.NullOrEmpty())Label(width,ref y,guestSummary,Muted);
+                }
                 else if(legacy!=null)Label(width,ref y,legacy.DescriptionPart,Muted);
                 else if(ultimatumPart!=null)Label(width,ref y,ultimatumPart.DescriptionPart,Muted);
             }

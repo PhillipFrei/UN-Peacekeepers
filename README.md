@@ -1,10 +1,14 @@
-# UN Peacekeepers 0.3.6 alpha — package 1 development build
+# UN Peacekeepers 0.3.6 alpha — packages 1–2 development build
 
 Based on release/0.3.4-alpha (`d43f2477`) with centralized quest completion, simplified automatic site clearance, individual guest stays and saved-quest repair. This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
 
 ## Package 1 — live quest displays
 
-Uniform remaining time (game days, hours, minutes, rounded up), offer deadline or no fixed deadline, next-step text, persisted failure reasons, live active-first mission list in UN Central including old supply contracts and ultimatum. Existing saved failure reasons are unknown unless recorded; no retrospective assumptions. All original mission deadlines, guest rules, reward amounts, map cleanup and combat conditions are retained. The other five development packages are not yet integrated. CI-base is not the final installable version.
+Uniform remaining time (game days, hours, minutes, rounded up), offer deadline or no fixed deadline, next-step text, persisted failure reasons, live active-first mission list in UN Central including old supply contracts and ultimatum. Existing saved failure reasons are unknown unless recorded; no retrospective assumptions. All original mission deadlines, guest rules, reward amounts, map cleanup and combat conditions are retained. Packages 3–6 are not yet integrated. CI-base is not the final installable version.
+
+## Package 2 — guest stay and evacuation
+
+Live group countdown is the latest valid individual guest-stay timer, not a predicted shuttle arrival. It is unavailable until all required remaining guest timers are valid. Individual status includes bleeding, anesthesia, guest status, natural exit, shuttle request, landed, boarded and departed. The existing 24-hour stay is unchanged. Mobile guests have up to six game hours after their stay to exit before fallback; downed guests or guests with no exit route are eligible immediately after the stay. Blocked requests retry once per game hour. An interrupted stay resets; an invalid pickup is unloaded before reuse. Existing dispatched legacy shuttles retain their flow. Actual confirmed departure before the mission deadline remains required. These are compile/rule-tested changes; in-game shuttle and guest AI need testing.
 
 ## Install
 

@@ -25,7 +25,22 @@ namespace UNPeacekeepers
         // Loose cargo, loot and ordinary NPCs are intentionally not cleanup blockers.
         public static bool CanCloseSite(bool reserved,bool playerHome,bool protectedUnits,bool nativeBlocked)
             =>!reserved&&!playerHome&&!protectedUnits&&!nativeBlocked;
-        public const int GuestStayTicks=60000;
+        public const int GuestStayTicks=60000, GuestExitGraceTicks=15000, GuestPickupRetryTicks=2500;
+        public static int ValidGuestCountdown(int since,int now,bool eligible)
+            =>eligible&&since>=0?GuestTicksRemaining(since,now):-1;
+        public static int GroupGuestCountdown(int expectedRemaining,IEnumerable<int> countdowns)
+        {
+            if(expectedRemaining<0||countdowns==null)return -1;
+            int count=0,max=0;
+            foreach(int ticks in countdowns){if(ticks<0)return -1;count++;max=Math.Max(max,ticks);}
+            return count==expectedRemaining?max:-1;
+        }
+        public static int ExitGraceRemaining(int since,int now)
+            =>since<0?GuestExitGraceTicks:(int)Math.Max(0L,Math.Min(GuestExitGraceTicks,(long)since+GuestStayTicks+GuestExitGraceTicks-now));
+        public static bool NeedsGuestPickup(int since,int now,bool eligible,bool downed,bool exitAvailable)
+            =>eligible&&GuestStayComplete(since,now)&&(downed||!exitAvailable||ExitGraceRemaining(since,now)==0);
+        public static bool CanConfirmGuestLaunch(bool active,bool aborting,bool beforeDeadline,bool allBoarded,bool allEligible,bool satisfied)
+            =>active&&!aborting&&beforeDeadline&&allBoarded&&allEligible&&satisfied;
         public static bool UsesGuestStay(int kind)=>kind==1||kind==2||kind==3;
         public static bool GuestStayComplete(int since,int now)=>since>=0&&(long)now-since>=GuestStayTicks;
         public static int GuestTicksRemaining(int since,int now)=>since<0?GuestStayTicks:(int)Math.Max(0,Math.Min(GuestStayTicks,(long)since+GuestStayTicks-now));

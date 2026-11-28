@@ -43,4 +43,34 @@
   <UNQ_NextUltimatumHome>Anführer zur Heimatkarte bringen und Abholshuttle abwarten.</UNQ_NextUltimatumHome>
   <UNQ_LegacyProgress>Abgegeben: {0}/{1}</UNQ_LegacyProgress>
   <UNQ_NextLegacySupply>Fehlende Hilfsgüter über die UN-Funkverbindung abgeben.</UNQ_NextLegacySupply>
+  <UNG_GroupPending>Gemeinsamer Countdown noch nicht verfügbar: {0}/{1} Personen ohne gültigen Gästezeit-Zähler.</UNG_GroupPending>
+  <UNG_GroupTime>Bis alle verbliebenen Gäste ihre Gästezeit erfüllt haben: {0}.</UNG_GroupTime>
+  <UNG_GroupReady>Alle verbliebenen Gäste haben ihre Gästezeit erfüllt. Sichere Abreise steht noch aus.</UNG_GroupReady>
+  <UNG_AllDeparted>Alle Gäste sicher abgereist.</UNG_AllDeparted>
+  <UNG_PickupAbort>Abholung unterbrochen: Gäste müssen ggf. ausgeladen und erneut stabilisiert werden.</UNG_PickupAbort>
+  <UNG_PickupEnRoute>Abholshuttle angefordert / im Anflug ({0} Personen). Keine feste Landezeit.</UNG_PickupEnRoute>
+  <UNG_PickupLoaded>Abholshuttle: {0} Personen an Bord. Abflug abwarten.</UNG_PickupLoaded>
+  <UNG_PickupLanded>Abholshuttle gelandet. An Bord: {0}/{1}. Nicht gehfähige Gäste bei Bedarf hineintragen.</UNG_PickupLanded>
+  <UNG_PickupRetry>Kein Abholshuttle verfügbar. Nächster möglicher Anforderungsversuch in {0}.</UNG_PickupRetry>
+  <UNG_NaturalExit>Gehfähige Gäste reisen selbstständig ab. Ersatzshuttle bei blockierter Abreise.</UNG_NaturalExit>
+  <UNG_LegacyPickup>Bereits angefordertes Abholshuttle aus älterem Spielstand: bisheriger Abholablauf bleibt bestehen.</UNG_LegacyPickup>
+  <UNG_Dead>Verstorben</UNG_Dead>
+  <UNG_Boarded>Im Shuttle an Bord</UNG_Boarded>
+  <UNG_Bleeding>Blutung – zuerst stillen</UNG_Bleeding>
+  <UNG_FactionBlocked>Empfängerfraktion nicht verfügbar oder feindlich</UNG_FactionBlocked>
+  <UNG_GuestStatusPending>Gaststatus noch nicht hergestellt; ggf. Gefangenen-/Sklavenstatus prüfen</UNG_GuestStatusPending>
+  <UNG_PickupAbortingPerson>Abholung unterbrochen – Ausladen/Versorgung abwarten</UNG_PickupAbortingPerson>
+  <UNG_TimerPending>Stabil – Gästezeit startet bei bestätigtem Gaststatus</UNG_TimerPending>
+  <UNG_PickupRequestedPerson>Abholshuttle angefordert – Landung abwarten</UNG_PickupRequestedPerson>
+  <UNG_CarryToShuttle>Nicht gehfähig – zum Shuttle tragen</UNG_CarryToShuttle>
+  <UNG_ShuttleUnreachable>Shuttle nicht erreichbar – Zugang freimachen oder Gast hineintragen</UNG_ShuttleUnreachable>
+  <UNG_BoardShuttle>Shuttle besteigen</UNG_BoardShuttle>
+  <UNG_HeldReady>Abreisefähig – aus Transport/Tragezustand entlassen</UNG_HeldReady>
+  <UNG_NextPickupBatch>Wartet auf nächste Shuttle-Abholung</UNG_NextPickupBatch>
+  <UNG_WaitPickup>Abreisefähig – wartet auf Shuttle-Anforderung</UNG_WaitPickup>
+  <UNG_ExitGrace>Reist selbstständig ab – Ersatzshuttle bei ausbleibender Abreise in {0}</UNG_ExitGrace>
+  <UNG_WaitLanding>Landung des Abholshuttles abwarten.</UNG_WaitLanding>
+  <UNG_PickupLetterTitle>UN-Abholshuttle angefordert</UNG_PickupLetterTitle>
+  <UNG_PickupLetterBody>Für „{0}“ wurde ein Abholshuttle für {1} abreisefähige Gäste angefordert. Nicht gehfähige Personen bei Bedarf an Bord tragen.</UNG_PickupLetterBody>
+  <UNG_ReasonUnverified>Shuttle mit nicht vollständig bestätigter Gästeliste oder Abreiseberechtigung abgeflogen. Keine Erfolgsbelohnung.</UNG_ReasonUnverified>
 </LanguageData>

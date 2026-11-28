@@ -99,6 +99,18 @@ class Program
         Check(UNMissionPolicy.GuestTicksRemaining(1234,31234)==30000,"Individual remaining stay");
         Check(UNMissionPolicy.GuestTicksRemaining(-1,70000)==60000,"Relapse restarts stay");
         Check(UNMissionPolicy.GuestTicksRemaining(1234,61235)==0,"No negative countdown");
+        Check(UNMissionPolicy.ValidGuestCountdown(0,30000,true)==30000,"Live valid timer");
+        Check(UNMissionPolicy.ValidGuestCountdown(-1,30000,true)==-1&&UNMissionPolicy.ValidGuestCountdown(0,30000,false)==-1,"No ETA for unstarted or invalid stay");
+        Check(UNMissionPolicy.GroupGuestCountdown(3,new[]{0,1200,6000})==6000,"Latest individual defines group ETA");
+        Check(UNMissionPolicy.GroupGuestCountdown(3,new[]{0,-1,6000})==-1&&UNMissionPolicy.GroupGuestCountdown(3,new[]{0,6000})==-1,"Pending or missing guest invalidates ETA");
+        Check(UNMissionPolicy.GroupGuestCountdown(0,new int[0])==0,"All departed");
+        Check(!UNMissionPolicy.NeedsGuestPickup(0,59999,true,true,false),"No pickup before full day");
+        Check(UNMissionPolicy.NeedsGuestPickup(0,60000,true,true,true)&&UNMissionPolicy.NeedsGuestPickup(0,60000,true,false,false),"Immediate fallback for downed or no route");
+        Check(!UNMissionPolicy.NeedsGuestPickup(0,74999,true,false,true)&&UNMissionPolicy.NeedsGuestPickup(0,75000,true,false,true),"Six game hours for natural exit");
+        Check(!UNMissionPolicy.NeedsGuestPickup(0,100000,false,true,false)&&!UNMissionPolicy.NeedsGuestPickup(-1,100000,true,true,false),"Relapse invalidates fallback");
+        Check(UNMissionPolicy.ExitGraceRemaining(0,60000)==15000&&UNMissionPolicy.ExitGraceRemaining(0,75000)==0,"Fallback countdown");
+        for(int mask=0;mask<64;mask++)
+            Check(UNMissionPolicy.CanConfirmGuestLaunch((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0,(mask&16)!=0,(mask&32)!=0)==(mask==61),"Guest launch proof "+mask);
         Check(!UNMissionPolicy.AllDeparted(5,4)&&UNMissionPolicy.AllDeparted(5,5)&&!UNMissionPolicy.AllDeparted(0,0),"No partial or empty group completion");
         // Migration only trusts persisted outcomes or complete positive evidence.
         for(int mask=0;mask<32;mask++)

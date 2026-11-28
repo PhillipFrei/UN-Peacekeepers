@@ -344,7 +344,9 @@ namespace UNPeacekeepers
         private Dictionary<string,int> guestSince=new Dictionary<string,int>();
         private HashSet<string> departedGuests=new HashSet<string>();
         private List<Pawn> guestPickup=new List<Pawn>();
-        private bool guestPickupActive;
+        private bool guestPickupActive,guestPickupAborting,guestUnloadOrdered;
+        private int nextGuestPickupAttempt;
+        private bool guestLaunchAllBoarded,guestLaunchAllEligible,guestLaunchAnyBoarded,guestLaunchBeforeDeadline;
         bool HasGuestPhase=>UNMissionPolicy.UsesGuestStay(kind);
         public bool IsMissionGuest(Pawn pawn)=>HasGuestPhase&&pawn!=null&&guestSince.ContainsKey(pawn.ThingID)&&!departedGuests.Contains(pawn.ThingID);
         bool GuestDeparted(Pawn pawn)=>pawn!=null&&departedGuests.Contains(pawn.ThingID);
@@ -403,7 +405,8 @@ namespace UNPeacekeepers
                     return "UNQ_NextStabilize".Translate();
                 return "UNQ_NextArrest".Translate();
             }
-            if(shuttle!=null)return "UNQ_NextShuttle".Translate();
+            if(shuttle!=null)return guestPickupAborting?"UNG_PickupAbort".Translate().ToString():
+                PickupLanded?"UNQ_NextShuttle".Translate().ToString():"UNG_WaitLanding".Translate().ToString();
             if(kind==3&&enemies.Any(p=>p!=null&&!p.Dead&&!p.Downed&&p.Spawned&&p.Map==destination?.Map))
                 return "UNQ_NextGuards".Translate();
             var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
@@ -412,6 +415,7 @@ namespace UNPeacekeepers
             if(remaining.Any(p=>!OnHomeHeld(p)))return "UNQ_NextBringHome".Translate();
             if(remaining.Any(p=>!GuestHealthy(p)))return "UNQ_NextStabilize".Translate();
             if(!GuestFactionValid)return "UNQ_NextGuestFaction".Translate();
+            if(remaining.Any(p=>!IsNativeGuest(p)))return "UNG_GuestStatusPending".Translate();
             if(remaining.Any(p=>!ReadyToLeave(p,Find.TickManager.TicksGame)))return "UNQ_NextGuestStay".Translate();
             return "UNQ_NextDeparture".Translate();
         }
@@ -472,6 +476,9 @@ namespace UNPeacekeepers
             Scribe_Collections.Look(ref departedGuests,"unDepartedGuests",LookMode.Value);
             Scribe_Collections.Look(ref guestPickup,"unGuestPickup",LookMode.Reference);
             Scribe_Values.Look(ref guestPickupActive,"unGuestPickupActive",false);
+            Scribe_Values.Look(ref guestPickupAborting,"unGuestPickupAborting",false);
+            Scribe_Values.Look(ref guestUnloadOrdered,"unGuestUnloadOrdered",false);
+            Scribe_Values.Look(ref nextGuestPickupAttempt,"unNextGuestPickupAttempt",0);
             Scribe_Values.Look(ref savedCollectionsMissing,"unSavedCollectionsMissing",false);
             Scribe_Values.Look(ref failureReason,"unFailureReason",0);
             if(Scribe.mode==LoadSaveMode.PostLoadInit)
@@ -554,21 +561,60 @@ namespace UNPeacekeepers
                 LordMaker.MakeNewLord(supportedFaction,new LordJob_UNGuestStay(pawn.Position),homeMap,new[]{pawn});
             }
         }
-        bool ReadyToLeave(Pawn pawn,int now)=>IsNativeGuest(pawn)&&GuestHealthy(pawn)&&
+        bool ReadyToLeave(Pawn pawn,int now)=>GuestFactionValid&&IsNativeGuest(pawn)&&GuestHealthy(pawn)&&
             guestSince.TryGetValue(pawn.ThingID,out int since)&&UNMissionPolicy.GuestStayComplete(since,now);
+        int GuestSince(Pawn pawn)=>pawn!=null&&guestSince.TryGetValue(pawn.ThingID,out int since)?since:-1;
+        bool PickupPassenger(Pawn pawn)=>guestPickupActive&&guestPickup.Contains(pawn);
+        bool OnPickupShuttle(Pawn pawn)=>pawn!=null&&shuttle?.TransporterComp?.innerContainer.Contains(pawn)==true;
+        int GuestCountdown(Pawn pawn,int now)=>UNMissionPolicy.ValidGuestCountdown(GuestSince(pawn),now,
+            GuestFactionValid&&GuestHealthy(pawn)&&IsNativeGuest(pawn)&&(OnHomeHeld(pawn)||(PickupPassenger(pawn)&&OnPickupShuttle(pawn))));
+        bool PickupLanded=>shuttle!=null&&shuttle.ShipExistsAndIsSpawned&&shuttle.shipThing.Map==homeMap;
+        void ResetPickup()
+        {
+            guestPickup.Clear();guestPickupActive=false;guestPickupAborting=false;guestUnloadOrdered=false;
+            shuttle=null;shuttleSatisfied=false;
+        }
+        void AbortGuestPickup()
+        {
+            guestPickupAborting=true;shuttleSatisfied=false;
+            // Keep the existing ship reference until it physically leaves; unload safely first.
+            if(!PickupLanded||guestUnloadOrdered)return;
+            shuttle.ShuttleComp.requiredPawns.Clear();
+            shuttle.ForceJob(ShipJobDefOf.Unload);
+            shuttle.AddJob(ShipJobDefOf.FlyAway);
+            guestUnloadOrdered=true;
+        }
         void ProcessGuests()
         {
             // The original field-hospital path does not require transporting people home.
             if(kind==1&&guestSince.Count==0&&departedGuests.Count==0&&targets.Count==patientCount&&
                 targets.All(p=>p!=null&&p.Spawned&&p.Map==destination.Map&&MedicallyRecovered(p)))
             {Finish(true);return;}
-            if(homeMap==null||!Find.Maps.Contains(homeMap)||!GuestFactionValid)return;
+            if(homeMap==null||!Find.Maps.Contains(homeMap))return;
             int now=Find.TickManager.TicksGame;
+            if(guestPickupActive)
+            {
+                foreach(var pawn in guestPickup.Where(p=>p!=null))
+                    if(!GuestFactionValid||!GuestHealthy(pawn)||!IsNativeGuest(pawn)||
+                        (!OnHomeHeld(pawn)&&!OnPickupShuttle(pawn)))
+                        guestSince[pawn.ThingID]=-1;
+                if(guestPickupAborting||guestPickup.Any(p=>p==null||!ReadyToLeave(p,now)))AbortGuestPickup();
+            }
+            if(!GuestFactionValid)
+            {
+                foreach(var pawn in targets.Where(p=>p!=null&&!GuestDeparted(p)&&guestSince.ContainsKey(p.ThingID)))
+                    guestSince[pawn.ThingID]=-1;
+                return;
+            }
             var pickupCandidates=new List<Pawn>();
             foreach(var pawn in targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList())
             {
                 string id=pawn.ThingID;
-                if(guestPickupActive&&guestPickup.Contains(pawn))continue;
+                if(PickupPassenger(pawn))
+                {
+                    if(guestPickupAborting&&OnHome(pawn)&&!OnPickupShuttle(pawn))StayAtColony(pawn);
+                    continue;
+                }
                 if(!OnHome(pawn))
                 {
                     // Carrying a guest to a bed on the home map must not erase a valid stay.
@@ -590,7 +636,8 @@ namespace UNPeacekeepers
                     guestSince[id]=now;
                 }
                 if(!ReadyToLeave(pawn,now)){StayAtColony(pawn);continue;}
-                if(pawn.Downed||!RCellFinder.TryFindBestExitSpot(pawn,out IntVec3 exit))
+                bool exitAvailable=!pawn.Downed&&RCellFinder.TryFindBestExitSpot(pawn,out IntVec3 exit);
+                if(UNMissionPolicy.NeedsGuestPickup(GuestSince(pawn),now,true,pawn.Downed,exitAvailable))
                 {
                     StayAtColony(pawn);pickupCandidates.Add(pawn);continue;
                 }
@@ -600,11 +647,19 @@ namespace UNPeacekeepers
                     LordMaker.MakeNewLord(supportedFaction,new LordJob_ExitMapBest(),homeMap,new[]{pawn});
                 }
             }
-            if(shuttle==null&&pickupCandidates.Count>0&&UNMissionSites.TryPickup(homeMap,pickupCandidates,SignalTag,out shuttle))
+            if(shuttle==null&&pickupCandidates.Count>0&&now>=nextGuestPickupAttempt)
             {
-                guestPickup=pickupCandidates;guestPickupActive=true;shuttleSatisfied=false;
+                nextGuestPickupAttempt=now+UNMissionPolicy.GuestPickupRetryTicks;
+                if(UNMissionSites.TryPickup(homeMap,pickupCandidates,SignalTag,out shuttle))
+                {
+                    guestPickup=pickupCandidates;guestPickupActive=true;guestPickupAborting=false;
+                    guestUnloadOrdered=false;shuttleSatisfied=false;
+                    Find.LetterStack.ReceiveLetter("UNG_PickupLetterTitle".Translate(),
+                        "UNG_PickupLetterBody".Translate(quest.name,guestPickup.Count),
+                        LetterDefOf.NeutralEvent,guestPickup[0]);
+                }
             }
-            if(guestPickupActive&&shuttle!=null&&shuttle.ShipExistsAndIsSpawned&&shuttle.shipThing.Map==homeMap)
+            if(guestPickupActive&&!guestPickupAborting&&PickupLanded)
             {
                 var enter=DefDatabase<JobDef>.GetNamedSilentFail("EnterTransporterAndDefendSelf");
                 if(enter!=null)foreach(var pawn in guestPickup.Where(p=>OnHome(p)&&!p.Downed&&ReadyToLeave(p,now)))
@@ -615,11 +670,12 @@ namespace UNPeacekeepers
                 }
             }
         }
-        public bool MayDepartGuest(Pawn pawn)=>!finished&&quest.State==QuestState.Ongoing&&IsMissionGuest(pawn)&&
-            OnHome(pawn)&&ReadyToLeave(pawn,Find.TickManager.TicksGame)&&!(guestPickupActive&&guestPickup.Contains(pawn));
+        public bool MayDepartGuest(Pawn pawn)=>!finished&&quest.State==QuestState.Ongoing&&RemainingTicks>0&&IsMissionGuest(pawn)&&
+            OnHome(pawn)&&ReadyToLeave(pawn,Find.TickManager.TicksGame)&&!PickupPassenger(pawn);
         public void ConfirmGuestDeparture(Pawn pawn)
         {
-            if(finished||!IsMissionGuest(pawn)||pawn.Dead)return;
+            if(finished||quest.State!=QuestState.Ongoing||!IsMissionGuest(pawn)||pawn.Dead)return;
+            if(RemainingTicks<=0){Finish(false,UNMissionFailure.Deadline);return;}
             departedGuests.Add(pawn.ThingID);
             if(AllGuestsDeparted())Finish(true);
         }
@@ -629,21 +685,40 @@ namespace UNPeacekeepers
             base.Notify_QuestSignalReceived(signal);
             var passengers=guestPickupActive?guestPickup:targets;
             if(!finished&&signal.tag==SignalTag+".SentSatisfied"&&shuttle!=null&&passengers.Count>0&&
-                passengers.All(p=>p!=null&&!p.Dead&&(!guestPickupActive||ReadyToLeave(p,Find.TickManager.TicksGame))&&shuttle.TransporterComp.innerContainer.Contains(p)))
+                (!HasGuestPhase||RemainingTicks>0)&&!guestPickupAborting&&
+                passengers.All(p=>p!=null&&!p.Dead&&(!guestPickupActive||ReadyToLeave(p,Find.TickManager.TicksGame))&&OnPickupShuttle(p)))
                 shuttleSatisfied=true;
+        }
+        // Snapshot actual passengers before the native launch moves the container.
+        public void PrepareGuestLaunch(TransportShip departing)
+        {
+            if(finished||!guestPickupActive||departing!=shuttle)return;
+            guestLaunchBeforeDeadline=RemainingTicks>0;
+            guestLaunchAnyBoarded=guestPickup.Any(OnPickupShuttle);
+            guestLaunchAllBoarded=guestPickup.Count>0&&guestPickup.All(OnPickupShuttle);
+            guestLaunchAllEligible=guestPickup.Count>0&&guestPickup.All(p=>p!=null&&!p.Dead&&ReadyToLeave(p,Find.TickManager.TicksGame));
         }
         public void NotifyDeparted(TransportShip departed)
         {
-            if(finished||quest.State!=QuestState.Ongoing||departed!=shuttle||!shuttleSatisfied)return;
+            if(finished||quest.State!=QuestState.Ongoing||departed!=shuttle)return;
+            if(HasGuestPhase&&RemainingTicks<=0){Finish(false,UNMissionFailure.Deadline);return;}
             if(guestPickupActive)
             {
-                if(guestPickup.Count==0||guestPickup.Any(p=>p==null||p.Dead))return;
-                foreach(var pawn in guestPickup)departedGuests.Add(pawn.ThingID);
-                guestPickup.Clear();guestPickupActive=false;shuttle=null;shuttleSatisfied=false;
-                if(AllGuestsDeparted()){shuttleSent=true;Finish(true);}
+                bool confirmed=UNMissionPolicy.CanConfirmGuestLaunch(guestPickupActive,guestPickupAborting,
+                    guestLaunchBeforeDeadline,guestLaunchAllBoarded,guestLaunchAllEligible,shuttleSatisfied);
+                if(confirmed)
+                {
+                    if(guestPickup.Any(p=>p==null||p.Dead)){Finish(false,UNMissionFailure.TargetLost);return;}
+                    foreach(var pawn in guestPickup)departedGuests.Add(pawn.ThingID);
+                    ResetPickup();
+                    if(AllGuestsDeparted()){shuttleSent=true;Finish(true);}
+                }
+                else if(guestLaunchAnyBoarded)Finish(false,UNMissionFailure.GuestDepartureUnverified);
+                else ResetPickup(); // confirmed empty departure; another pickup may be attempted
                 return;
             }
-            if(targets.Count==patientCount&&targets.All(p=>p!=null&&!p.Dead))
+            // Preserve older direct civilian shuttles and military arrests.
+            if(shuttleSatisfied&&targets.Count==patientCount&&targets.All(p=>p!=null&&!p.Dead))
             {shuttleSent=true;Finish(true);}
         }
         bool CanAct()
@@ -710,27 +785,79 @@ namespace UNPeacekeepers
             }
             return true;
         }
+        public string GuestSummary()
+        {
+            if(!HasGuestPhase||!generated||finished)return null;
+            var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
+            if(kind==1&&guestSince.Count==0&&departedGuests.Count==0&&!remaining.Any(OnHomeHeld))return null;
+            if(shuttle!=null&&!guestPickupActive)return "UNG_LegacyPickup".Translate();
+            int now=Find.TickManager.TicksGame;
+            int expected=patientCount-departedGuests.Count;
+            int eta=UNMissionPolicy.GroupGuestCountdown(expected,remaining.Select(p=>GuestCountdown(p,now)));
+            int waiting=remaining.Count(p=>GuestCountdown(p,now)<0)+Math.Max(0,expected-remaining.Count);
+            var lines=new List<string>();
+            if(expected==0&&eta==0)lines.Add("UNG_AllDeparted".Translate());
+            else if(eta<0)lines.Add("UNG_GroupPending".Translate(waiting,patientCount));
+            else if(eta>0)lines.Add("UNG_GroupTime".Translate(UNQuestDisplay.Time(eta)));
+            else lines.Add("UNG_GroupReady".Translate());
+            if(guestPickupActive)
+            {
+                int boarded=guestPickup.Count(OnPickupShuttle);
+                if(guestPickupAborting)lines.Add("UNG_PickupAbort".Translate());
+                else if(!PickupLanded)lines.Add("UNG_PickupEnRoute".Translate(guestPickup.Count));
+                else if(boarded==guestPickup.Count&&boarded>0)lines.Add("UNG_PickupLoaded".Translate(boarded));
+                else lines.Add("UNG_PickupLanded".Translate(boarded,guestPickup.Count));
+            }
+            else if(remaining.Any(p=>OnHome(p)&&ReadyToLeave(p,now)))
+            {
+                if(now<nextGuestPickupAttempt)lines.Add("UNG_PickupRetry".Translate(UNQuestDisplay.Time(UNMissionPolicy.TicksUntil(nextGuestPickupAttempt,now))));
+                else lines.Add("UNG_NaturalExit".Translate());
+            }
+            return string.Join("\n",lines);
+        }
         string GuestProgress()
         {
             int now=Find.TickManager.TicksGame;
             var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
             var lines=new List<string>();
-            // Keep the original medical count for field-hospital treatment and mixed groups.
             if(kind==1)lines.Add("UNMS_Recovered".Translate(departedGuests.Count+remaining.Count(MedicallyRecovered),patientCount).ToString());
             if(kind!=1||guestSince.Count>0||departedGuests.Count>0||remaining.Any(OnHomeHeld))
-                lines.Add("UNMS_GuestProgress".Translate(departedGuests.Count+remaining.Count(OnHomeHeld),
-                    departedGuests.Count+remaining.Count(p=>OnHomeHeld(p)&&GuestHealthy(p)),
-                    departedGuests.Count+remaining.Count(p=>OnHomeHeld(p)&&ReadyToLeave(p,now)),departedGuests.Count,patientCount).ToString());
+            {
+                lines.Add("UNMS_GuestProgress".Translate(departedGuests.Count+remaining.Count(p=>OnHomeHeld(p)||PickupPassenger(p)&&OnPickupShuttle(p)),
+                    departedGuests.Count+remaining.Count(p=>(OnHomeHeld(p)||PickupPassenger(p)&&OnPickupShuttle(p))&&GuestHealthy(p)),
+                    departedGuests.Count+remaining.Count(p=>GuestCountdown(p,now)==0),departedGuests.Count,patientCount).ToString());
+                var summary=GuestSummary();if(!summary.NullOrEmpty())lines.Add(summary);
+            }
             foreach(var pawn in targets.Where(p=>p!=null))
             {
                 string state;
+                int countdown=GuestCountdown(pawn,now);
                 if(GuestDeparted(pawn))state="UNMS_GuestDeparted".Translate();
-                else if(!GuestHealthy(pawn))state=(pawn.health?.hediffSet.HasHediff(HediffDefOf.Anesthetic)==true?"UNMS_Anesthetized":"UNMS_Unwell").Translate();
-                else if(!OnHomeHeld(pawn))state=kind==1?"UNMS_Well".Translate().ToString():"UNMS_GuestNeedsHome".Translate().ToString();
-                else if(guestSince.TryGetValue(pawn.ThingID,out int since)&&since>=0)
-                    state=UNMissionPolicy.GuestStayComplete(since,now)?"UNMS_GuestLeaving".Translate().ToString():
-                        "UNQ_GuestTime".Translate(UNQuestDisplay.Time(UNMissionPolicy.GuestTicksRemaining(since,now))).ToString();
-                else state="UNMS_Well".Translate();
+                else if(pawn.Dead)state="UNG_Dead".Translate();
+                else if(shuttle!=null&&!guestPickupActive)state=OnPickupShuttle(pawn)?"UNG_Boarded".Translate().ToString():"UNG_LegacyPickup".Translate().ToString();
+                else if(!OnHomeHeld(pawn)&&!(PickupPassenger(pawn)&&OnPickupShuttle(pawn)))
+                    state=kind==1?(MedicallyRecovered(pawn)?"UNMS_Well":"UNMS_Unwell").Translate().ToString():"UNMS_GuestNeedsHome".Translate().ToString();
+                else if(pawn.health?.hediffSet.HasHediff(HediffDefOf.Anesthetic)==true)state="UNMS_Anesthetized".Translate();
+                else if(pawn.health?.hediffSet.BleedRateTotal>0f)state="UNG_Bleeding".Translate();
+                else if(!GuestHealthy(pawn))state="UNMS_Unwell".Translate();
+                else if(!GuestFactionValid)state="UNG_FactionBlocked".Translate();
+                else if(!IsNativeGuest(pawn))state="UNG_GuestStatusPending".Translate();
+                else if(PickupPassenger(pawn)&&guestPickupAborting)state="UNG_PickupAbortingPerson".Translate();
+                else if(countdown<0)state="UNG_TimerPending".Translate();
+                else if(countdown>0)state="UNQ_GuestTime".Translate(UNQuestDisplay.Time(countdown));
+                else if(PickupPassenger(pawn))
+                {
+                    if(OnPickupShuttle(pawn))state="UNG_Boarded".Translate();
+                    else if(!PickupLanded)state="UNG_PickupRequestedPerson".Translate();
+                    else if(pawn.Downed)state="UNG_CarryToShuttle".Translate();
+                    else if(pawn.Spawned&&!pawn.CanReach(shuttle.shipThing,PathEndMode.Touch,Danger.Some))state="UNG_ShuttleUnreachable".Translate();
+                    else state="UNG_BoardShuttle".Translate();
+                }
+                else if(!pawn.Spawned)state="UNG_HeldReady".Translate();
+                else if(UNMissionPolicy.NeedsGuestPickup(GuestSince(pawn),now,true,pawn.Downed,
+                    !pawn.Downed&&RCellFinder.TryFindBestExitSpot(pawn,out IntVec3 exit)))
+                    state=shuttle!=null?"UNG_NextPickupBatch".Translate().ToString():"UNG_WaitPickup".Translate().ToString();
+                else state="UNG_ExitGrace".Translate(UNQuestDisplay.Time(UNMissionPolicy.ExitGraceRemaining(GuestSince(pawn),now)));
                 lines.Add(pawn.LabelShortCap+": "+state);
             }
             if(bionicCase && requiredLimbIndex>=0)
@@ -738,7 +865,6 @@ namespace UNPeacekeepers
                 var limb=targets.FirstOrDefault()?.RaceProps.body.AllParts.FirstOrDefault(x=>x.Index==requiredLimbIndex);
                 if(limb!=null)lines.Add("UNMS_BionicRequired".Translate(limb.Label,DefDatabase<ThingDef>.GetNamedSilentFail(requiredBionic)?.LabelCap.ToString()??requiredBionic));
             }
-            if(shuttle!=null)lines.Add("UNMS_ShuttleWaiting".Translate());
             return string.Join("\n",lines);
         }
         void AddInjury(Pawn p,BodyPartRecord part,float severity)

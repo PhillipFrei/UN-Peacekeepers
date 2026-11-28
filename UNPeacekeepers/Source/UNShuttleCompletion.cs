@@ -8,6 +8,10 @@ namespace UNPeacekeepers
     [HarmonyPatch(typeof(ShipJob_FlyAway),nameof(ShipJob_FlyAway.TryStart))]
     internal static class UNShuttleCompletion
     {
+        static void Prefix(ShipJob_FlyAway __instance)
+        {
+            foreach(var mission in UNMissionSites.Active.ToList())mission.PrepareGuestLaunch(__instance.transportShip);
+        }
         static void Postfix(ShipJob_FlyAway __instance,bool __result)
         {
             if(!__result)return;

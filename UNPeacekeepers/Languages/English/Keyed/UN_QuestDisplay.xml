@@ -43,4 +43,34 @@
   <UNQ_NextUltimatumHome>Bring the leader to a home map and wait for the pickup shuttle.</UNQ_NextUltimatumHome>
   <UNQ_LegacyProgress>Delivered: {0}/{1}</UNQ_LegacyProgress>
   <UNQ_NextLegacySupply>Deliver the remaining supplies through UN radio contact.</UNQ_NextLegacySupply>
+  <UNG_GroupPending>Group countdown unavailable: {0}/{1} people have no valid guest-stay timer.</UNG_GroupPending>
+  <UNG_GroupTime>Until every remaining guest completes the stay: {0}.</UNG_GroupTime>
+  <UNG_GroupReady>Every remaining guest has completed the stay. Safe departure is still required.</UNG_GroupReady>
+  <UNG_AllDeparted>All guests departed safely.</UNG_AllDeparted>
+  <UNG_PickupAbort>Pickup interrupted: guests may need unloading and stabilization again.</UNG_PickupAbort>
+  <UNG_PickupEnRoute>Pickup shuttle requested / en route ({0} people). No fixed landing time.</UNG_PickupEnRoute>
+  <UNG_PickupLoaded>Pickup shuttle: {0} people aboard. Await departure.</UNG_PickupLoaded>
+  <UNG_PickupLanded>Pickup shuttle landed. Aboard: {0}/{1}. Carry immobile guests aboard if necessary.</UNG_PickupLanded>
+  <UNG_PickupRetry>No pickup shuttle available. Next possible request attempt in {0}.</UNG_PickupRetry>
+  <UNG_NaturalExit>Mobile guests depart on foot. Backup shuttle if departure is blocked.</UNG_NaturalExit>
+  <UNG_LegacyPickup>Pickup shuttle already requested in an older save: original pickup flow retained.</UNG_LegacyPickup>
+  <UNG_Dead>Deceased</UNG_Dead>
+  <UNG_Boarded>Aboard shuttle</UNG_Boarded>
+  <UNG_Bleeding>Bleeding – stop bleeding first</UNG_Bleeding>
+  <UNG_FactionBlocked>Recipient faction unavailable or hostile</UNG_FactionBlocked>
+  <UNG_GuestStatusPending>Guest status not established; check prisoner/slave status if applicable</UNG_GuestStatusPending>
+  <UNG_PickupAbortingPerson>Pickup interrupted – await unloading/treatment</UNG_PickupAbortingPerson>
+  <UNG_TimerPending>Stable – guest timer starts when guest status is confirmed</UNG_TimerPending>
+  <UNG_PickupRequestedPerson>Pickup shuttle requested – await landing</UNG_PickupRequestedPerson>
+  <UNG_CarryToShuttle>Unable to walk – carry to shuttle</UNG_CarryToShuttle>
+  <UNG_ShuttleUnreachable>Shuttle unreachable – clear access or carry guest aboard</UNG_ShuttleUnreachable>
+  <UNG_BoardShuttle>Board shuttle</UNG_BoardShuttle>
+  <UNG_HeldReady>Ready – release from transport/carrying</UNG_HeldReady>
+  <UNG_NextPickupBatch>Waiting for next pickup batch</UNG_NextPickupBatch>
+  <UNG_WaitPickup>Ready – waiting for shuttle request</UNG_WaitPickup>
+  <UNG_ExitGrace>Departing on foot – backup shuttle if still present in {0}</UNG_ExitGrace>
+  <UNG_WaitLanding>Wait for the pickup shuttle to land.</UNG_WaitLanding>
+  <UNG_PickupLetterTitle>UN pickup shuttle requested</UNG_PickupLetterTitle>
+  <UNG_PickupLetterBody>A pickup shuttle has been requested for {1} ready guests for “{0}”. Carry immobile people aboard if needed.</UNG_PickupLetterBody>
+  <UNG_ReasonUnverified>Shuttle departed without full passenger and eligibility confirmation. No success reward.</UNG_ReasonUnverified>
 </LanguageData>
