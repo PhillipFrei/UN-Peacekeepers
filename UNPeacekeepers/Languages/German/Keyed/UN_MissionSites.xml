@@ -16,7 +16,7 @@
   <UNMS_Partial>Teillieferung gespeichert. Erst alle geforderten Güter ergeben die volle Belohnung.</UNMS_Partial>
   <UNMS_TreatmentIncomplete>Die Patienten sind noch nicht vollständig genesen.</UNMS_TreatmentIncomplete>
   <UNMS_EnemiesRemain>Die Lagerwachen müssen besiegt oder kampfunfähig sein, bevor die zugewiesenen Gefangenen befreit werden.</UNMS_EnemiesRemain>
-  <UNMS_ReturnHome>Diese Personen stehen jetzt vorübergehend unter Spielerkontrolle. Bringe sie alle zur Heimatkarte; ein UN-Shuttle holt sie ab, sobald Blutungen gestillt sind.</UNMS_ReturnHome>
+  <UNMS_ReturnHome>Diese Personen stehen vorübergehend unter Spielerkontrolle. Bringe sie zur Heimatkarte. Nach Stabilisierung bleiben sie je einen Spieltag als Gäste und reisen selbstständig ab.</UNMS_ReturnHome>
   <UNMS_Stale>Der Zielort oder die genaue Zielperson ist nicht mehr verfügbar. Dieses Angebot kann nicht angenommen werden.</UNMS_Stale>
   <UNMS_UnsafeCleanup>Auf diesem Einsatzort befinden sich noch eigene Personen, Güter oder benötigte Zielpersonen. Räume ihn sicher, bevor er entfernt wird.</UNMS_UnsafeCleanup>
   <UNMS_RemoveSite>Geräumten UN-Einsatzort schließen</UNMS_RemoveSite>
@@ -39,9 +39,9 @@
   <UNMS_Kind5>Militärische Intervention</UNMS_Kind5>
   <UNMS_Kind6>Elite-Festnahme</UNMS_Kind6>
   <UNMS_Goal0>Transportiere alle genannten Güter an diesen Zielort. Bei Siedlungen die Karawane auswählen und abgeben; im Lager Güter bis auf 8 Felder zum Übergabepunkt bringen und dort das Ziel prüfen. Mehrere Fahrten sind erlaubt.</UNMS_Goal0>
-  <UNMS_Goal1>Heile alle Patienten von akuten Verletzungen und heilbaren Infektionen/Krankheiten. Keine Raum-, Temperatur- oder Bettvorgaben. Die Quest endet automatisch am Einsatzort; bei Heimtransport holt das UN-Shuttle die Genesenen ab.</UNMS_Goal1>
-  <UNMS_Goal2>Übernimm am Übergabepunkt vorübergehend die Kontrolle über alle zugewiesenen Zivilisten. Transportiere sie körperlich zur angegebenen Heimatkarte, stille Blutungen und verlade alle in das UN-Abholshuttle.</UNMS_Goal2>
-  <UNMS_Goal3>Befreie alle zugewiesenen Gefangenen, nachdem ihre Wachen besiegt oder kampfunfähig sind. Transportiere die genauen Personen lebend nach Hause, stabilisiere sie und übergib alle an das UN-Shuttle.</UNMS_Goal3>
+  <UNMS_Goal1>Heile alle Patienten von akuten Verletzungen und heilbaren Infektionen/Krankheiten. Keine Raum-, Temperatur- oder Bettvorgaben. Am Einsatzort endet die Quest automatisch; bei Heimtransport bleibt jeder Genesene einen Spieltag als Gast und reist anschließend ab.</UNMS_Goal1>
+  <UNMS_Goal2>Übernimm alle zugewiesenen Zivilisten am Übergabepunkt. Bringe sie lebend zur Heimatkarte, stille Blutungen und warte das Ende der Narkose ab. Jeder bleibt einen Spieltag als Gast; alle müssen sicher abreisen.</UNMS_Goal2>
+  <UNMS_Goal3>Befreie alle zugewiesenen Gefangenen nach Ausschaltung der Wachen. Bringe sie lebend zur Heimatkarte und stabilisiere sie. Jeder bleibt einen Spieltag als Gast; alle müssen sicher abreisen.</UNMS_Goal3>
   <UNMS_Goal4>Halte alle zugewiesenen Zivilisten und den markierten Übergabepunkt für die gesamte angegebene Schutzdauer am Leben; besiege oder entwaffne alle zugewiesenen Angreifer.</UNMS_Goal4>
   <UNMS_Goal5>Schütze alle zugewiesenen Zivilisten und den markierten Übergabepunkt über die gesamte Schutzdauer und schlage alle zugewiesenen Angreifer zurück. Unterstützte Fraktion und UN stellen lokale Verteidiger.</UNMS_Goal5>
   <UNMS_Goal6>Nimm den genau benannten lebenden Fraktionsanführer gefangen, halte ihn am Leben, transportiere ihn nach Hause, stille Blutungen und verlade ihn in das UN-Abholshuttle. Der Tod der Zielperson lässt den Auftrag scheitern.</UNMS_Goal6>
@@ -52,7 +52,13 @@
   <UNMS_Unwell>Behandlung erforderlich</UNMS_Unwell>
   <UNMS_Anesthetized>Narkose – auf Erwachen warten</UNMS_Anesthetized>
   <UNMS_BionicRequired>Erforderlicher Ersatz: {0} – {1}</UNMS_BionicRequired>
-  <UNMS_ShuttleWaiting>UN-Abholshuttle: alle Patienten an Bord bringen.</UNMS_ShuttleWaiting>
+  <UNMS_ShuttleWaiting>UN-Abholshuttle: abreisefähige Personen steigen ein; nicht gehfähige Personen bei Bedarf an Bord tragen.</UNMS_ShuttleWaiting>
   <UNMS_CleanupReady>Geräumter Einsatzort: wird automatisch von der Weltkarte entfernt.</UNMS_CleanupReady>
   <UNMS_CleanupWaiting>Einsatz beendet. Automatische Entfernung wartet auf sichere Räumung (Personen, Güter, Gebäude oder ankommende Transporte).</UNMS_CleanupWaiting>
+  <UNMS_GuestProgress>Heimgebracht: {0}/{4} | Versorgt: {1}/{4} | Gästezeit beendet: {2}/{4} | Abgereist: {3}/{4}</UNMS_GuestProgress>
+  <UNMS_GuestDeparted>Sicher abgereist</UNMS_GuestDeparted>
+  <UNMS_GuestNeedsHome>Zur Heimatkarte bringen</UNMS_GuestNeedsHome>
+  <UNMS_GuestLeaving>Abreise läuft / wartet auf sicheren Weg</UNMS_GuestLeaving>
+  <UNMS_GuestHours>Gast – noch {0:0.0} Spielstunden</UNMS_GuestHours>
+  <UNMS_GuestNoRecruit>{0} ist ein vorübergehender UN-Missionsgast und kann nicht rekrutiert werden.</UNMS_GuestNoRecruit>
 </LanguageData>

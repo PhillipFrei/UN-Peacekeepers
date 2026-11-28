@@ -83,6 +83,14 @@ class Program
         Check(UNMissionPolicy.IsUnverifiedSiteItem(10,11),"Merged imported cargo blocks removal");
         Check(!UNMissionPolicy.IsUnverifiedSiteItem(10,10)&&!UNMissionPolicy.IsUnverifiedSiteItem(10,5),"Original unchanged or consumed cargo does not block");
         Check(!UNMissionPolicy.IsUnverifiedSiteItem(-1,0),"No remaining item");
+        for(int kind=0;kind<=6;kind++)
+            Check(UNMissionPolicy.UsesGuestStay(kind)==(kind==1||kind==2||kind==3),"Civilian guest types only "+kind);
+        Check(!UNMissionPolicy.GuestStayComplete(-1,60000),"No stay without recovery");
+        Check(!UNMissionPolicy.GuestStayComplete(1234,61233)&&UNMissionPolicy.GuestStayComplete(1234,61234),"Exactly 24 game hours");
+        Check(UNMissionPolicy.GuestTicksRemaining(1234,31234)==30000,"Individual remaining stay");
+        Check(UNMissionPolicy.GuestTicksRemaining(-1,70000)==60000,"Relapse restarts stay");
+        Check(UNMissionPolicy.GuestTicksRemaining(1234,61235)==0,"No negative countdown");
+        Check(!UNMissionPolicy.AllDeparted(5,4)&&UNMissionPolicy.AllDeparted(5,5)&&!UNMissionPolicy.AllDeparted(0,0),"No partial or empty group completion");
         // Failure after merging some silver must leave only the undelivered remainder.
         int pending=1500, physical=0;
         foreach(int actual in new[]{120,380}){pending=UNMissionPolicy.RemainingAfterPlacement(pending,actual);physical+=actual;}

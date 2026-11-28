@@ -16,6 +16,11 @@ namespace UNPeacekeepers
             =>!reserved&&!playerHome&&!people&&!assets;
         public static bool IsUnverifiedSiteItem(int originalCount,int currentCount)
             =>currentCount>0&&(originalCount<0||currentCount>originalCount);
+        public const int GuestStayTicks=60000;
+        public static bool UsesGuestStay(int kind)=>kind==1||kind==2||kind==3;
+        public static bool GuestStayComplete(int since,int now)=>since>=0&&(long)now-since>=GuestStayTicks;
+        public static int GuestTicksRemaining(int since,int now)=>since<0?GuestStayTicks:(int)Math.Max(0,Math.Min(GuestStayTicks,(long)since+GuestStayTicks-now));
+        public static bool AllDeparted(int required,int departed)=>required>0&&departed==required;
         public static int Threshold(int tier)=>tier==2?80:tier==1?50:0;
         public static int Goodwill(int tier)=>tier==2?30:tier==1?20:10;
         public static int BaseSilver(int tier)=>tier==2?10000:tier==1?5000:1500;

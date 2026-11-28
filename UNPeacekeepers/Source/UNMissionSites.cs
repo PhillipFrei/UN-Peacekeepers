@@ -274,6 +274,42 @@ namespace UNPeacekeepers
             }
         }
     }
+    // A real NPC guest lord, without vanilla visitor gift/early-departure timers.
+    // The objective controls each person's stay and later changes the duty to native exit AI.
+    public sealed class LordJob_UNGuestStay:LordJob
+    {
+        private IntVec3 spot;
+        public LordJob_UNGuestStay(){}
+        public LordJob_UNGuestStay(IntVec3 spot){this.spot=spot;}
+        public override bool CanAutoAddPawns=>false;
+        public override StateGraph CreateGraph()
+        {
+            var graph=new StateGraph();graph.AddToil(new LordToil_DefendPoint(spot));return graph;
+        }
+        public override void ExposeData(){Scribe_Values.Look(ref spot,"unGuestSpot");}
+    }
+    [HarmonyPatch(typeof(Pawn),nameof(Pawn.ExitMap))]
+    internal static class UNGuestDeparture
+    {
+        static void Prefix(Pawn __instance,out UNMissionObjective __state)
+        {__state=UNMissionSites.Active.FirstOrDefault(o=>o.MayDepartGuest(__instance));}
+        static void Postfix(Pawn __instance,UNMissionObjective __state)
+        {
+            if(__state!=null&&!__instance.Dead&&!__instance.Spawned&&Find.WorldPawns.Contains(__instance)&&
+                !__instance.IsCaravanMember()&&__instance.ParentHolder==null)
+                __state.ConfirmGuestDeparture(__instance);
+        }
+    }
+    [HarmonyPatch(typeof(RecruitUtility),nameof(RecruitUtility.Recruit))]
+    internal static class UNGuestRecruitment
+    {
+        static bool Prefix(Pawn pawn,Faction faction)
+        {
+            if(faction!=Faction.OfPlayer||!UNMissionSites.Active.Any(o=>o.IsMissionGuest(pawn)))return true;
+            Messages.Message("UNMS_GuestNoRecruit".Translate(pawn.LabelShortCap),MessageTypeDefOf.RejectInput,false);
+            return false;
+        }
+    }
     public sealed class UNMissionObjective:QuestPartActivable
     {
         public int kind,tier,seed,patientCount,durationTicks,defenceTicks;
@@ -297,13 +333,27 @@ namespace UNPeacekeepers
         private bool started,generated,finished,shuttleSent,shuttleSatisfied;
         private int began=-1,nextPoll;
         private TransportShip shuttle;
+        // Stable ThingIDs survive individual exits and save/load, even if a world pawn is discarded.
+        private Dictionary<string,int> guestSince=new Dictionary<string,int>();
+        private HashSet<string> departedGuests=new HashSet<string>();
+        private List<Pawn> guestPickup=new List<Pawn>();
+        private bool guestPickupActive;
+        bool HasGuestPhase=>UNMissionPolicy.UsesGuestStay(kind);
+        public bool IsMissionGuest(Pawn pawn)=>HasGuestPhase&&pawn!=null&&guestSince.ContainsKey(pawn.ThingID)&&!departedGuests.Contains(pawn.ThingID);
+        bool GuestDeparted(Pawn pawn)=>pawn!=null&&departedGuests.Contains(pawn.ThingID);
+        bool OnHome(Pawn pawn)=>pawn!=null&&pawn.Spawned&&homeMap!=null&&pawn.Map==homeMap&&Find.Maps.Contains(homeMap);
+        bool GuestHealthy(Pawn pawn)=>pawn!=null&&!pawn.Dead&&pawn.health!=null&&pawn.health.hediffSet.BleedRateTotal<=0f&&
+            !pawn.health.hediffSet.HasHediff(HediffDefOf.Anesthetic)&&(kind!=1||MedicallyRecovered(pawn));
+        bool GuestFactionValid=>supportedFaction!=null&&!supportedFaction.defeated&&!supportedFaction.deactivated&&!supportedFaction.HostileTo(Faction.OfPlayer);
+        bool IsNativeGuest(Pawn pawn)=>pawn!=null&&pawn.Faction==supportedFaction&&pawn.HostFaction==Faction.OfPlayer&&
+            pawn.guest!=null&&pawn.guest.GuestStatus==GuestStatus.Guest;
         public int DurationTicks=>durationTicks;
         public string OfferDescription=>"UNMS_Kind".Translate()+": "+("UNMS_Kind"+kind).Translate()+"\n"+"UNMS_Destination".Translate(destination?.Label??"UNMS_Camp".Translate().ToString(),tile.ToString())+"\n"+"UNMS_Faction".Translate(supportedFaction?.Name??"—")+"\n"+
             (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+(kind==1&&bionicCase?"\n"+"UNMS_BionicGoal".Translate().ToString():"")+"\n"+"UNMS_Time".Translate(durationTicks/60000)+
             (enemyFaction!=null?"\n"+"UNMS_Enemy".Translate(enemyFaction.Name,enemyBudget.ToString("0")):"\n"+"UNMS_Peaceful".Translate());
         public override string DescriptionPart=>started?("UNMS_Remaining".Translate(Math.Max(0,durationTicks-quest.TicksSinceAccepted)/60000f)+"\n"+
             (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_NameTargets".Translate(string.Join(", ",targets.Where(p=>p!=null).Select(p=>p.LabelShortCap.ToString()))).ToString()+
-            (kind==1&&generated?"\n"+MedicalProgress():""))):null;
+            (HasGuestPhase&&generated?"\n"+GuestProgress():""))):null;
         public override IEnumerable<GlobalTargetInfo> QuestLookTargets {get{if(destination!=null)yield return new GlobalTargetInfo(destination);foreach(var p in targets)if(p!=null)yield return new GlobalTargetInfo(p);}}
         public override IEnumerable<Faction> InvolvedFactions{get{if(supportedFaction!=null)yield return supportedFaction;if(enemyFaction!=null)yield return enemyFaction;}}
         public override bool QuestPartReserves(Pawn pawn)=>targets.Contains(pawn);
@@ -357,13 +407,24 @@ namespace UNPeacekeepers
             Scribe_Collections.Look(ref targets,"unTargets",LookMode.Reference);Scribe_Collections.Look(ref enemies,"unEnemies",LookMode.Reference);Scribe_Collections.Look(ref allies,"unAllies",LookMode.Reference);Scribe_Collections.Look(ref protectedThings,"unProtectedThings",LookMode.Reference);Scribe_Collections.Look(ref ownedStructures,"unOwnedStructures",LookMode.Reference);Scribe_Values.Look(ref supplement,"unSupplement");Scribe_Values.Look(ref achieved,"unAchieved");
             Scribe_Values.Look(ref bionicCase,"unBionicCase",false);Scribe_Values.Look(ref requiredLimbIndex,"unRequiredLimbIndex",-1);Scribe_Values.Look(ref requiredBionic,"unRequiredBionic");
             Scribe_Values.Look(ref started,"unStarted");Scribe_Values.Look(ref generated,"unGenerated");Scribe_Values.Look(ref finished,"unFinished");Scribe_Values.Look(ref shuttleSent,"unShuttleSent");Scribe_Values.Look(ref shuttleSatisfied,"unShuttleSatisfied");Scribe_Values.Look(ref began,"unBegan",-1);Scribe_References.Look(ref shuttle,"unShuttle");
+            Scribe_Collections.Look(ref guestSince,"unGuestSince",LookMode.Value,LookMode.Value);
+            Scribe_Collections.Look(ref departedGuests,"unDepartedGuests",LookMode.Value);
+            Scribe_Collections.Look(ref guestPickup,"unGuestPickup",LookMode.Reference);
+            Scribe_Values.Look(ref guestPickupActive,"unGuestPickupActive",false);
+            if(Scribe.mode==LoadSaveMode.PostLoadInit)
+            {
+                if(guestSince==null)guestSince=new Dictionary<string,int>();
+                if(departedGuests==null)departedGuests=new HashSet<string>();
+                if(guestPickup==null)guestPickup=new List<Pawn>();
+            }
         }
         public override void QuestPartTick()
         {
             base.QuestPartTick();
             if(!started||finished||quest.State!=QuestState.Ongoing)return;
             if(Find.TickManager.TicksGame<nextPoll)return;nextPoll=Find.TickManager.TicksGame+250;
-            if(quest.TicksSinceAccepted>=durationTicks||targets.Any(p=>p==null||p.Dead)||destination==null||!destination.Spawned){Finish(false);return;}
+            if(HasGuestPhase&&AllGuestsDeparted()){Finish(true);return;}
+            if(quest.TicksSinceAccepted>=durationTicks||MissingOrDeadTarget()||destination==null||!destination.Spawned){Finish(false);return;}
             if(custody==null)custody=quest.PartsListForReading.OfType<QuestPart_ExtraFaction>().FirstOrDefault();
             if(custody!=null)custody.affectedPawns=targets;
             if(generated&&(kind==4||kind==5))
@@ -371,32 +432,136 @@ namespace UNPeacekeepers
                 if(protectedThings.Any(t=>t==null||t.Destroyed)){Finish(false);return;}
                 if(Find.TickManager.TicksGame>=began+defenceTicks&&targets.All(p=>p.Spawned&&p.Map==destination.Map)&&enemies.All(p=>p!=null&&(p.Dead||p.Downed))){Finish(true);return;}
             }
-            if(generated&&kind==1&&targets.Count==patientCount&&targets.All(MedicallyRecovered)&&shuttle==null)
+            if(generated&&HasGuestPhase)
             {
-                if(homeMap!=null&&Find.Maps.Contains(homeMap)&&targets.All(p=>p.Spawned&&p.Map==homeMap))
-                    UNMissionSites.TryPickup(homeMap,targets,SignalTag,out shuttle);
-                else if(targets.All(p=>p.Spawned&&p.Map==destination.Map)) {Finish(true);return;}
+                // Preserve an already dispatched pre-v0.3.3 shuttle. New civilian journeys
+                // use the guest lifecycle; only military arrests retain direct pickup.
+                if(shuttle==null||guestPickupActive)ProcessGuests();
             }
-            if(generated&&(kind==2||kind==3||kind==6)&&targets.Count==patientCount&&shuttle==null&&homeMap!=null&&Find.Maps.Contains(homeMap)&&targets.All(p=>p.Spawned&&p.Map==homeMap&&p.health.hediffSet.BleedRateTotal<=0f&&!p.health.hediffSet.HasHediff(HediffDefOf.Anesthetic))&&(kind!=6||targets.All(p=>p.IsPrisonerOfColony)))
+            if(generated&&kind==6&&targets.Count==patientCount&&shuttle==null&&homeMap!=null&&Find.Maps.Contains(homeMap)&&
+                targets.All(p=>OnHome(p)&&GuestHealthy(p)&&p.IsPrisonerOfColony))
                 UNMissionSites.TryPickup(homeMap,targets,SignalTag,out shuttle);
             if(shuttle!=null&&shuttle.shipThing.Destroyed&&!shuttleSent)Finish(false);
+        }
+        bool MissingOrDeadTarget()
+        {
+            if(!HasGuestPhase)return targets.Any(p=>p==null||p.Dead);
+            var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
+            return remaining.Any(p=>p.Dead)||(generated&&remaining.Count+departedGuests.Count!=patientCount);
+        }
+        bool AllGuestsDeparted()=>HasGuestPhase&&generated&&UNMissionPolicy.AllDeparted(patientCount,departedGuests.Count);
+        void StayAtColony(Pawn pawn)
+        {
+            if(!IsNativeGuest(pawn))
+            {
+                if(pawn.IsPrisonerOfColony||pawn.IsSlaveOfColony||pawn.guest==null)return;
+                pawn.GetLord()?.Notify_PawnLost(pawn,PawnLostCondition.LeftVoluntarily);
+                if(pawn.Faction==Faction.OfPlayer)pawn.SetFaction(supportedFaction);
+                if(pawn.Faction!=supportedFaction)return;
+                // Suppress vanilla rescuee auto-joining, not the normal guest needs.
+                pawn.guest.leftAfterRescue=true;
+                pawn.guest.SetGuestStatus(Faction.OfPlayer,GuestStatus.Guest);
+                if(!IsNativeGuest(pawn))return;
+            }
+            if(!(pawn.GetLord()?.LordJob is LordJob_UNGuestStay))
+            {
+                pawn.GetLord()?.Notify_PawnLost(pawn,PawnLostCondition.LeftVoluntarily);
+                LordMaker.MakeNewLord(supportedFaction,new LordJob_UNGuestStay(pawn.Position),homeMap,new[]{pawn});
+            }
+        }
+        bool ReadyToLeave(Pawn pawn,int now)=>IsNativeGuest(pawn)&&GuestHealthy(pawn)&&
+            guestSince.TryGetValue(pawn.ThingID,out int since)&&UNMissionPolicy.GuestStayComplete(since,now);
+        void ProcessGuests()
+        {
+            // The original field-hospital path does not require transporting people home.
+            if(kind==1&&guestSince.Count==0&&departedGuests.Count==0&&targets.Count==patientCount&&
+                targets.All(p=>p!=null&&p.Spawned&&p.Map==destination.Map&&MedicallyRecovered(p)))
+            {Finish(true);return;}
+            if(homeMap==null||!Find.Maps.Contains(homeMap)||!GuestFactionValid)return;
+            int now=Find.TickManager.TicksGame;
+            var pickupCandidates=new List<Pawn>();
+            foreach(var pawn in targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList())
+            {
+                string id=pawn.ThingID;
+                if(guestPickupActive&&guestPickup.Contains(pawn))continue;
+                if(!OnHome(pawn))
+                {
+                    if(guestSince.ContainsKey(id))guestSince[id]=-1;
+                    continue;
+                }
+                if(!GuestHealthy(pawn))
+                {
+                    // A relapse restarts the required uninterrupted day; retain the visitor status.
+                    if(guestSince.ContainsKey(id)){guestSince[id]=-1;StayAtColony(pawn);}
+                    continue;
+                }
+                if(!guestSince.TryGetValue(id,out int since)||since<0)
+                {
+                    StayAtColony(pawn);
+                    if(!IsNativeGuest(pawn))continue;
+                    guestSince[id]=now;
+                }
+                if(!ReadyToLeave(pawn,now)){StayAtColony(pawn);continue;}
+                if(pawn.Downed||!RCellFinder.TryFindBestExitSpot(pawn,out IntVec3 exit))
+                {
+                    StayAtColony(pawn);pickupCandidates.Add(pawn);continue;
+                }
+                if(!(pawn.GetLord()?.LordJob is LordJob_ExitMapBest))
+                {
+                    pawn.GetLord()?.Notify_PawnLost(pawn,PawnLostCondition.LeftVoluntarily);
+                    LordMaker.MakeNewLord(supportedFaction,new LordJob_ExitMapBest(),homeMap,new[]{pawn});
+                }
+            }
+            if(shuttle==null&&pickupCandidates.Count>0&&UNMissionSites.TryPickup(homeMap,pickupCandidates,SignalTag,out shuttle))
+            {
+                guestPickup=pickupCandidates;guestPickupActive=true;shuttleSatisfied=false;
+            }
+            if(guestPickupActive&&shuttle!=null&&shuttle.ShipExistsAndIsSpawned&&shuttle.shipThing.Map==homeMap)
+            {
+                var enter=DefDatabase<JobDef>.GetNamedSilentFail("EnterTransporterAndDefendSelf");
+                if(enter!=null)foreach(var pawn in guestPickup.Where(p=>OnHome(p)&&!p.Downed&&ReadyToLeave(p,now)))
+                {
+                    if(pawn.CurJob?.def==enter)continue;
+                    if(pawn.CanReach(shuttle.shipThing,PathEndMode.Touch,Danger.Some))
+                        pawn.jobs.TryTakeOrderedJob(JobMaker.MakeJob(enter,shuttle.shipThing));
+                }
+            }
+        }
+        public bool MayDepartGuest(Pawn pawn)=>!finished&&quest.State==QuestState.Ongoing&&IsMissionGuest(pawn)&&
+            OnHome(pawn)&&ReadyToLeave(pawn,Find.TickManager.TicksGame)&&!(guestPickupActive&&guestPickup.Contains(pawn));
+        public void ConfirmGuestDeparture(Pawn pawn)
+        {
+            if(finished||!IsMissionGuest(pawn)||pawn.Dead)return;
+            departedGuests.Add(pawn.ThingID);
+            if(AllGuestsDeparted())Finish(true);
         }
         string SignalTag=>"Quest"+quest.id+".UNPickup";
         public override void Notify_QuestSignalReceived(Signal signal)
         {
             base.Notify_QuestSignalReceived(signal);
-            if(!finished&&signal.tag==SignalTag+".SentSatisfied"&&shuttle!=null&&targets.All(p=>p!=null&&!p.Dead&&shuttle.TransporterComp.innerContainer.Contains(p)))
-            {shuttleSatisfied=true;}
+            var passengers=guestPickupActive?guestPickup:targets;
+            if(!finished&&signal.tag==SignalTag+".SentSatisfied"&&shuttle!=null&&passengers.Count>0&&
+                passengers.All(p=>p!=null&&!p.Dead&&(!guestPickupActive||ReadyToLeave(p,Find.TickManager.TicksGame))&&shuttle.TransporterComp.innerContainer.Contains(p)))
+                shuttleSatisfied=true;
         }
         public void NotifyDeparted(TransportShip departed)
         {
-            if(!finished&&quest.State==QuestState.Ongoing&&departed==shuttle&&shuttleSatisfied&&targets.Count==patientCount&&targets.All(p=>p!=null&&!p.Dead))
+            if(finished||quest.State!=QuestState.Ongoing||departed!=shuttle||!shuttleSatisfied)return;
+            if(guestPickupActive)
+            {
+                if(guestPickup.Count==0||guestPickup.Any(p=>p==null||p.Dead))return;
+                foreach(var pawn in guestPickup)departedGuests.Add(pawn.ThingID);
+                guestPickup.Clear();guestPickupActive=false;shuttle=null;shuttleSatisfied=false;
+                if(AllGuestsDeparted()){shuttleSent=true;Finish(true);}
+                return;
+            }
+            if(targets.Count==patientCount&&targets.All(p=>p!=null&&!p.Dead))
             {shuttleSent=true;Finish(true);}
         }
         bool CanAct()
         {
             if(finished||quest.State!=QuestState.Ongoing)return false;
-            if(quest.TicksSinceAccepted>=durationTicks||targets.Any(p=>p==null||p.Dead)){Finish(false);return false;}
+            if(quest.TicksSinceAccepted>=durationTicks||MissingOrDeadTarget()){Finish(false);return false;}
             return true;
         }
         void Finish(bool success)
@@ -456,11 +621,25 @@ namespace UNPeacekeepers
             }
             return true;
         }
-        string MedicalProgress()
+        string GuestProgress()
         {
-            var lines=new List<string>{"UNMS_Recovered".Translate(targets.Count(MedicallyRecovered),patientCount).ToString()};
-            foreach(var p in targets.Where(p=>p!=null))
-                lines.Add(p.LabelShortCap+": "+(MedicallyRecovered(p)?"UNMS_Well":p.health.hediffSet.HasHediff(HediffDefOf.Anesthetic)?"UNMS_Anesthetized":"UNMS_Unwell").Translate());
+            int now=Find.TickManager.TicksGame;
+            var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
+            var lines=new List<string>{
+                "UNMS_GuestProgress".Translate(departedGuests.Count+remaining.Count(p=>OnHome(p)),departedGuests.Count+remaining.Count(p=>OnHome(p)&&GuestHealthy(p)),
+                    departedGuests.Count+remaining.Count(p=>OnHome(p)&&ReadyToLeave(p,now)),departedGuests.Count,patientCount).ToString()};
+            foreach(var pawn in targets.Where(p=>p!=null))
+            {
+                string state;
+                if(GuestDeparted(pawn))state="UNMS_GuestDeparted".Translate();
+                else if(!GuestHealthy(pawn))state=(pawn.health?.hediffSet.HasHediff(HediffDefOf.Anesthetic)==true?"UNMS_Anesthetized":"UNMS_Unwell").Translate();
+                else if(!OnHome(pawn))state=kind==1?"UNMS_Well".Translate().ToString():"UNMS_GuestNeedsHome".Translate().ToString();
+                else if(guestSince.TryGetValue(pawn.ThingID,out int since)&&since>=0)
+                    state=UNMissionPolicy.GuestStayComplete(since,now)?"UNMS_GuestLeaving".Translate().ToString():
+                        "UNMS_GuestHours".Translate(UNMissionPolicy.GuestTicksRemaining(since,now)/2500f).ToString();
+                else state="UNMS_Well".Translate();
+                lines.Add(pawn.LabelShortCap+": "+state);
+            }
             if(bionicCase && requiredLimbIndex>=0)
             {
                 var limb=targets.FirstOrDefault()?.RaceProps.body.AllParts.FirstOrDefault(x=>x.Index==requiredLimbIndex);
@@ -562,6 +741,14 @@ namespace UNPeacekeepers
         public override void Cleanup()
         {
             base.Cleanup();
+            // Cancelled/failed stays must not strand non-player guests in a permanent stay lord.
+            if(HasGuestPhase)foreach(var pawn in targets.Where(p=>p!=null&&!p.Dead&&!GuestDeparted(p)&&p.Spawned&&
+                p.Faction==supportedFaction&&p.GetLord()?.LordJob is LordJob_UNGuestStay).ToList())
+            {
+                pawn.GetLord()?.Notify_PawnLost(pawn,PawnLostCondition.LeftVoluntarily);
+                if(!pawn.IsPrisonerOfColony&&!pawn.IsSlaveOfColony)
+                    LordMaker.MakeNewLord(pawn.Faction,new LordJob_ExitMapBest(),pawn.Map,new[]{pawn});
+            }
             // Exact mission civilians return to their original faction, even after cancellation/reload.
             if(kind!=6)foreach(var pawn in targets.Where(p=>p!=null&&!p.Dead&&p.Faction==Faction.OfPlayer))
             {
