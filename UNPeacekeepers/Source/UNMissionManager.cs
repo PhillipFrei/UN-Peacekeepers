@@ -179,7 +179,9 @@ namespace UNPeacekeepers
             catch(Exception ex)
             {
                 // Technical setup failure is not a player crime or failed objective.
-                reward.settled=true;q.End(QuestEndOutcome.Fail);
+                reward.technicalRepair=true;reward.settled=true;
+                q.GetFirstPartOfType<UNMissionObjective>()?.RequestCompletion(false,UNMissionFailure.Technical);
+                q.End(QuestEndOutcome.Fail);
                 if(slot!=null)slot.refillAt=now;
                 Log.Error("[UN Peacekeepers] Mission setup failed: "+ex);
                 return;
@@ -197,12 +199,18 @@ namespace UNPeacekeepers
                 return;
             }
             if(success&&!objective.CanRewardSuccess)return;
-            objective.RequestCompletion(success);
+            objective.RequestCompletion(success,success?UNMissionFailure.Unknown:UNMissionFailure.Cancelled);
         }
         void RestoreOfferReferences()
         {
             while(slots.Count<10)slots.Add(new UNMissionSlot());
             var quests=Find.QuestManager.QuestsListForReading.Where(IsManaged).ToList();
+            // Refresh the static terms of still-live quests; preserve all saved quantities and deadlines.
+            foreach(var q in quests.Where(q=>q.State==QuestState.NotYetAccepted||q.State==QuestState.Ongoing))
+            {
+                var objective=q.GetFirstPartOfType<UNMissionObjective>();
+                if(objective!=null)q.description=objective.OfferDescription;
+            }
             // The quest itself owns the original slot, difficulty and recipient. Never reroll these.
             for(int i=0;i<slots.Count;i++)
             {
@@ -267,7 +275,7 @@ namespace UNPeacekeepers
                                 // failure penalty for an unrecoverable technical setup.
                                 r.technicalRepair=true;r.settled=true;
                                 TryRewardStep(q,"technical repair notice",()=>RepairJournal(q,"UNM_RepairTechnical"));
-                                if(o!=null)o.RequestCompletion(false);
+                                if(o!=null)o.RequestCompletion(false,UNMissionFailure.Technical);
                                 else q.End(QuestEndOutcome.Fail);
                             }
                             else
@@ -317,7 +325,7 @@ namespace UNPeacekeepers
                 if(!r.unGoodwillAttempted)
                 {
                     r.unGoodwillAttempted=true;
-                    if(unAvailable)TryRewardStep(q,"failure goodwill",()=>UNContact.ApplyPrisonGoodwill(un,-5,"UNM_Failed".Translate(q.name)));
+                    if(unAvailable)TryRewardStep(q,"failure goodwill",()=>UNContact.ApplyPrisonGoodwill(un,-5,"UNM_Failed".Translate(q.name).ToString()+" — "+UNQuestDisplay.Failure(objective?.FailureReason??UNMissionFailure.Unknown)));
                 }
                 r.settled=true;
                 return;
@@ -465,7 +473,11 @@ namespace UNPeacekeepers
                 catch(Exception ex){Log.Error("[UN Peacekeepers] Silver pod notification failed: "+ex);}
             }
         }
-        public static void Open(Pawn pawn=null)=>Find.WindowStack.Add(new Dialog_UNMissions(pawn));
+        public static void Open(Pawn pawn=null)
+        {
+            Find.WindowStack.WindowOfType<Dialog_UNMissions>()?.Close();
+            Find.WindowStack.Add(new Dialog_UNMissions(pawn));
+        }
         [HarmonyPatch(typeof(Quest),nameof(Quest.Accept))]
         static class AcceptGate
         {
@@ -540,8 +552,8 @@ namespace UNPeacekeepers
             lines.Add("");
             lines.Add("UNM_SupplementSilver".Translate(r.silver));
             lines.Add("UNM_SupplementGoodwill".Translate(UNMissionPolicy.Goodwill(r.tier),r.supported?.Name??"—"));
-            lines.Add("UNM_SupplementExpiry".Translate((Math.Max(0,q.acceptanceExpireTick-Find.TickManager.TicksGame)/60000f).ToString("0.0")));
-            lines.Add("UNM_SupplementDuration".Translate(o.DurationTicks/60000));
+            lines.Add(UNQuestDisplay.OfferTime(q));
+            lines.Add("UNQ_TotalDuration".Translate(UNQuestDisplay.Time(o.DurationTicks)));
             lines.Add("");
             lines.Add("UNM_SupplementRules".Translate());
             return string.Join("\n",lines);
@@ -597,7 +609,10 @@ namespace UNPeacekeepers
         {
             var manager=UNMissionManager.Instance;
             Widgets.Label(new Rect(0,0,rect.width,30),"UNM_Pool".Translate(manager?.ActiveCount??0));
-            var quests=(manager?.Offers??Enumerable.Empty<Quest>()).Concat(Find.QuestManager.QuestsListForReading.Where(q=>q.State==QuestState.Ongoing&&UNMissionManager.IsManaged(q))).ToList();
+            // Live active missions first, including surviving legacy orders and the ultimatum.
+            var quests=Find.QuestManager.QuestsListForReading.Where(q=>q.State==QuestState.Ongoing&&
+                (UNMissionManager.IsManaged(q)||q.GetFirstPartOfType<QuestPart_UNSupply>()!=null||q.GetFirstPartOfType<QuestPart_UNUltimatum>()!=null))
+                .Concat(manager?.Offers??Enumerable.Empty<Quest>()).Distinct().ToList();
             float w=rect.width-24;
             var labels=quests.Select(q=>q.name+"\n"+q.description+"\n"+string.Join("\n",q.PartsListForReading.Select(p=>p.DescriptionPart).Where(d=>!d.NullOrEmpty()))).ToList();
             var heights=labels.Select(l=>Text.CalcHeight(l,w-20)+90).ToList();
@@ -614,7 +629,7 @@ namespace UNPeacekeepers
                     if(block==null){if(Widgets.ButtonText(new Rect(10,y+heights[i]-48,210,30),"UN_C_Accept".Translate()))q.Accept(pawn);}
                     else Widgets.Label(new Rect(10,y+heights[i]-48,w-20,40),block);
                 }
-                else if(Widgets.ButtonText(new Rect(10,y+heights[i]-48,310,30),"UNM_Cancel".Translate()))
+                else if(UNMissionManager.IsManaged(q)&&Widgets.ButtonText(new Rect(10,y+heights[i]-48,310,30),"UNM_Cancel".Translate()))
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation("UNM_CancelConfirm".Translate(),()=>manager.Complete(q.id,false),true));
                 y+=heights[i];
             }

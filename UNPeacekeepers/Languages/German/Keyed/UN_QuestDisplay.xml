@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <UNQ_Time>{0} T. {1} Std. {2} Min.</UNQ_Time>
+  <UNQ_AcceptUntil>Annahmefrist: noch {0}</UNQ_AcceptUntil>
+  <UNQ_NoAcceptanceDeadline>Keine feste Annahmefrist; Angebot bleibt abhängig von Verfügbarkeit und Gunst.</UNQ_NoAcceptanceDeadline>
+  <UNQ_Offered>Angebot – noch nicht angenommen</UNQ_Offered>
+  <UNQ_Active>Aktiv</UNQ_Active>
+  <UNQ_Success>Erfolgreich abgeschlossen</UNQ_Success>
+  <UNQ_Failed>Gescheitert</UNQ_Failed>
+  <UNQ_Closed>Angebot beendet / nicht verfügbar</UNQ_Closed>
+  <UNQ_Status>Status: {0}</UNQ_Status>
+  <UNQ_Remaining>Verbleibende Gesamtfrist: {0}</UNQ_Remaining>
+  <UNQ_TotalDuration>Missionsfrist ab Annahme: {0}</UNQ_TotalDuration>
+  <UNQ_Next>Nächster Schritt: {0}</UNQ_Next>
+  <UNQ_Failure>Grund: {0}</UNQ_Failure>
+  <UNQ_CompletionPending>Alle erforderlichen Ziele erfüllt. Questabschluss wird verarbeitet.</UNQ_CompletionPending>
+  <UNQ_ReasonDeadline>Missionsfrist abgelaufen.</UNQ_ReasonDeadline>
+  <UNQ_ReasonTargetLost>Eine erforderliche Zielperson ist gestorben oder nicht mehr verfügbar.</UNQ_ReasonTargetLost>
+  <UNQ_ReasonDestinationLost>Der erforderliche Einsatzort ist nicht mehr verfügbar.</UNQ_ReasonDestinationLost>
+  <UNQ_ReasonProtectionLost>Der erforderliche Übergabepunkt oder Schutzauftrag ist nicht mehr vollständig vorhanden.</UNQ_ReasonProtectionLost>
+  <UNQ_ReasonShuttleLost>Das erforderliche Abholshuttle wurde zerstört.</UNQ_ReasonShuttleLost>
+  <UNQ_ReasonCancelled>Auftrag abgebrochen.</UNQ_ReasonCancelled>
+  <UNQ_ReasonTechnical>Technischer Fehler; keine zusätzliche Gunststrafe.</UNQ_ReasonTechnical>
+  <UNQ_ReasonAcceptance>Annahmebedingungen oder Einsatzort sind nicht mehr gültig.</UNQ_ReasonAcceptance>
+  <UNQ_ReasonUnknown>Kein genauer Grund gespeichert.</UNQ_ReasonUnknown>
+  <UNQ_NextAccept>Auftrag annehmen, sofern die Bedingungen erfüllt sind.</UNQ_NextAccept>
+  <UNQ_NextSetup>Einsatz wird vorbereitet.</UNQ_NextSetup>
+  <UNQ_NextSupply>Fehlende Güter zum Ziel bringen und dort abgeben.</UNQ_NextSupply>
+  <UNQ_NextTravel>Zum markierten Einsatzort reisen.</UNQ_NextTravel>
+  <UNQ_NextProtect>Zielpersonen und Übergabepunkt schützen; zugewiesene Gegner besiegen oder kampfunfähig machen.</UNQ_NextProtect>
+  <UNQ_NextShuttle>Erforderliche Personen ins Abholshuttle verladen und sichere Abreise abwarten.</UNQ_NextShuttle>
+  <UNQ_NextStabilize>Blutungen stillen, Narkose abwarten und gegebenenfalls erforderliche Behandlung abschließen.</UNQ_NextStabilize>
+  <UNQ_NextArrest>Den lebenden Anführer gefangen nehmen und als Gefangenen zur Heimatkarte bringen.</UNQ_NextArrest>
+  <UNQ_NextGuards>Zugewiesene Lagerwachen besiegen oder kampfunfähig machen.</UNQ_NextGuards>
+  <UNQ_NextHealField>Alle Patienten vor Ort behandeln oder zur vollständigen Versorgung heimbringen.</UNQ_NextHealField>
+  <UNQ_NextBringHome>Alle noch ausstehenden Zielpersonen zur Heimatkarte bringen; bei Evakuierung/Befreiung zuerst am Übergabepunkt übernehmen.</UNQ_NextBringHome>
+  <UNQ_NextGuestFaction>Gaststatus setzt eine verfügbare, nicht feindliche Empfängerfraktion voraus.</UNQ_NextGuestFaction>
+  <UNQ_NextGuestStay>Gästezeit nach Stabilisierung bzw. Genesung vollständig abwarten.</UNQ_NextGuestStay>
+  <UNQ_NextDeparture>Sichere Abreise aller Gäste abwarten.</UNQ_NextDeparture>
+  <UNQ_GuestTime>Gast – noch {0}</UNQ_GuestTime>
+  <UNQ_UltimatumTarget>Ausgewählter Anführer: {0}</UNQ_UltimatumTarget>
+  <UNQ_NextLeader>Anführer in der UN-Zentrale auswählen.</UNQ_NextLeader>
+  <UNQ_NextUltimatumHome>Anführer zur Heimatkarte bringen und Abholshuttle abwarten.</UNQ_NextUltimatumHome>
+  <UNQ_LegacyProgress>Abgegeben: {0}/{1}</UNQ_LegacyProgress>
+  <UNQ_NextLegacySupply>Fehlende Hilfsgüter über die UN-Funkverbindung abgeben.</UNQ_NextLegacySupply>
+</LanguageData>

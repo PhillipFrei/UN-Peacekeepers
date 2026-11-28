@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <UNQ_Time>{0} d {1} h {2} min</UNQ_Time>
+  <UNQ_AcceptUntil>Acceptance deadline: {0} remaining</UNQ_AcceptUntil>
+  <UNQ_NoAcceptanceDeadline>No fixed acceptance deadline; availability and goodwill still apply.</UNQ_NoAcceptanceDeadline>
+  <UNQ_Offered>Offer – not yet accepted</UNQ_Offered>
+  <UNQ_Active>Active</UNQ_Active>
+  <UNQ_Success>Completed successfully</UNQ_Success>
+  <UNQ_Failed>Failed</UNQ_Failed>
+  <UNQ_Closed>Offer closed / unavailable</UNQ_Closed>
+  <UNQ_Status>Status: {0}</UNQ_Status>
+  <UNQ_Remaining>Total time remaining: {0}</UNQ_Remaining>
+  <UNQ_TotalDuration>Mission deadline after acceptance: {0}</UNQ_TotalDuration>
+  <UNQ_Next>Next step: {0}</UNQ_Next>
+  <UNQ_Failure>Reason: {0}</UNQ_Failure>
+  <UNQ_CompletionPending>All required objectives fulfilled. Processing quest completion.</UNQ_CompletionPending>
+  <UNQ_ReasonDeadline>Mission deadline expired.</UNQ_ReasonDeadline>
+  <UNQ_ReasonTargetLost>A required target died or is no longer available.</UNQ_ReasonTargetLost>
+  <UNQ_ReasonDestinationLost>The required operation site is no longer available.</UNQ_ReasonDestinationLost>
+  <UNQ_ReasonProtectionLost>The required handover point or protection objective is no longer intact.</UNQ_ReasonProtectionLost>
+  <UNQ_ReasonShuttleLost>The required pickup shuttle was destroyed.</UNQ_ReasonShuttleLost>
+  <UNQ_ReasonCancelled>Mission cancelled.</UNQ_ReasonCancelled>
+  <UNQ_ReasonTechnical>Technical error; no additional goodwill penalty.</UNQ_ReasonTechnical>
+  <UNQ_ReasonAcceptance>Acceptance conditions or destination are no longer valid.</UNQ_ReasonAcceptance>
+  <UNQ_ReasonUnknown>No exact cause recorded.</UNQ_ReasonUnknown>
+  <UNQ_NextAccept>Accept the mission if eligible.</UNQ_NextAccept>
+  <UNQ_NextSetup>Mission setup in progress.</UNQ_NextSetup>
+  <UNQ_NextSupply>Bring missing goods to the destination and deliver them.</UNQ_NextSupply>
+  <UNQ_NextTravel>Travel to the marked operation site.</UNQ_NextTravel>
+  <UNQ_NextProtect>Protect the targets and handover point; defeat or incapacitate assigned attackers.</UNQ_NextProtect>
+  <UNQ_NextShuttle>Load the required people into the pickup shuttle and wait for safe departure.</UNQ_NextShuttle>
+  <UNQ_NextStabilize>Stop bleeding, wait for anesthesia to wear off and finish required treatment.</UNQ_NextStabilize>
+  <UNQ_NextArrest>Capture the living leader and bring them home as a prisoner.</UNQ_NextArrest>
+  <UNQ_NextGuards>Defeat or incapacitate the assigned camp guards.</UNQ_NextGuards>
+  <UNQ_NextHealField>Treat all patients at the site or bring them home for complete treatment.</UNQ_NextHealField>
+  <UNQ_NextBringHome>Bring remaining targets home; for evacuation/rescue first take custody at the handover point.</UNQ_NextBringHome>
+  <UNQ_NextGuestFaction>Guest status requires an available, non-hostile recipient faction.</UNQ_NextGuestFaction>
+  <UNQ_NextGuestStay>Wait for the full guest stay after stabilization or recovery.</UNQ_NextGuestStay>
+  <UNQ_NextDeparture>Wait for every guest to depart safely.</UNQ_NextDeparture>
+  <UNQ_GuestTime>Guest – {0} remaining</UNQ_GuestTime>
+  <UNQ_UltimatumTarget>Selected leader: {0}</UNQ_UltimatumTarget>
+  <UNQ_NextLeader>Select a leader in UN Central.</UNQ_NextLeader>
+  <UNQ_NextUltimatumHome>Bring the leader to a home map and wait for the pickup shuttle.</UNQ_NextUltimatumHome>
+  <UNQ_LegacyProgress>Delivered: {0}/{1}</UNQ_LegacyProgress>
+  <UNQ_NextLegacySupply>Deliver the remaining supplies through UN radio contact.</UNQ_NextLegacySupply>
+</LanguageData>

@@ -26,7 +26,7 @@ namespace UNPeacekeepers
             get
             {
                 var part=Active;
-                if(part!=null)return "UNCrime_UltimatumStatus".Translate(part.target?.LabelShortCap.ToString()??"UNCrime_NoLeader".Translate().ToString(),Math.Max(0,part.deadline-Find.TickManager.TicksGame)/60000f);
+                if(part!=null)return part.DescriptionPart;
                 if(capturePending)return "UNCrime_ArrestPending".Translate(captureTarget?.LabelShortCap.ToString()??"UNCrime_NoLeader".Translate().ToString());
                 return "UNCrime_LeaderStatus".Translate(selectedLeader?.LabelShortCap.ToString()??"UNCrime_NoLeader".Translate().ToString(),UNCrimeMonitor.Instance?.UnconsumedPoints??0);
             }
@@ -73,9 +73,9 @@ namespace UNPeacekeepers
             Find.LetterStack.ReceiveLetter(quest.name,quest.description,LetterDefOf.ThreatBig);
             if(part.target==null)SelectLeaderMenu();
         }
-        internal void Fail(QuestPart_UNUltimatum part)
+        internal void Fail(QuestPart_UNUltimatum part,UNMissionFailure reason)
         {
-            if(part.resolved)return;part.resolved=true;
+            if(part.resolved)return;part.resolved=true;part.failureReason=(int)reason;
             UNCrimeMonitor.RecordCrime(20,"UNCrime_UltimatumRefused".Translate(),"ultimatum:"+part.quest.id);
             captureTarget=part.target;capturePending=true;nextCaptureAttempt=Find.TickManager.TicksGame;
             part.quest.End(QuestEndOutcome.Fail);
@@ -110,15 +110,26 @@ namespace UNPeacekeepers
     }
     public sealed class QuestPart_UNUltimatum:QuestPartActivable
     {
-        public Pawn target;public int deadline;public bool resolved;
+        public Pawn target;public int deadline,failureReason;public bool resolved;
         TransportShip shuttle;int nextShuttle;bool satisfied;
         string Tag=>"UNUltimatum"+quest.id;
-        public override string DescriptionPart=>UNUltimatum.Instance?.StatusText;
-        public override void ExposeData(){base.ExposeData();Scribe_References.Look(ref target,"target");Scribe_Values.Look(ref deadline,"deadline");Scribe_Values.Look(ref resolved,"resolved");Scribe_References.Look(ref shuttle,"shuttle");Scribe_Values.Look(ref nextShuttle,"nextShuttle");Scribe_Values.Look(ref satisfied,"satisfied",false);}
+        public override string DescriptionPart
+        {
+            get
+            {
+                if(quest==null)return null;
+                string header=UNQuestDisplay.Header(quest,UNMissionPolicy.TicksUntil(deadline,Find.TickManager.TicksGame));
+                if(quest.State==QuestState.EndedFailed)return header+"\n"+UNQuestDisplay.Failed((UNMissionFailure)failureReason);
+                if(quest.State!=QuestState.Ongoing)return header;
+                return header+"\n"+"UNQ_UltimatumTarget".Translate(target?.LabelShortCap.ToString()??"UNCrime_NoLeader".Translate().ToString())+
+                    "\n"+UNQuestDisplay.Next((target==null?"UNQ_NextLeader":shuttle==null?"UNQ_NextUltimatumHome":"UNQ_NextShuttle").Translate());
+            }
+        }
+        public override void ExposeData(){base.ExposeData();Scribe_References.Look(ref target,"target");Scribe_Values.Look(ref deadline,"deadline");Scribe_Values.Look(ref resolved,"resolved");Scribe_Values.Look(ref failureReason,"unFailureReason",0);Scribe_References.Look(ref shuttle,"shuttle");Scribe_Values.Look(ref nextShuttle,"nextShuttle");Scribe_Values.Look(ref satisfied,"satisfied",false);}
         public override void QuestPartTick()
         {
             base.QuestPartTick();if(resolved)return;int now=Find.TickManager.TicksGame;
-            if(now>=deadline||target?.Dead==true){UNUltimatum.Instance?.Fail(this);return;}
+            if(now>=deadline||target?.Dead==true){UNUltimatum.Instance?.Fail(this,now>=deadline?UNMissionFailure.Deadline:UNMissionFailure.TargetLost);return;}
             if(shuttle==null&&target?.Spawned==true&&target.Map.IsPlayerHome&&now>=nextShuttle)
             {nextShuttle=now+2500;UNMissionSites.TryPickup(target.Map,new List<Pawn>{target},Tag,out shuttle);}
         }

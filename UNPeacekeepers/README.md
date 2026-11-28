@@ -1,10 +1,14 @@
-# UN Peacekeepers 0.3.5 alpha
+# UN Peacekeepers 0.3.6 alpha — package 1 development build
 
 Based on release/0.3.4-alpha (`d43f2477`) with centralized quest completion, simplified automatic site clearance, individual guest stays and saved-quest repair. This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
 
+## Package 1 — live quest displays
+
+Uniform remaining time (game days, hours, minutes, rounded up), offer deadline or no fixed deadline, next-step text, persisted failure reasons, live active-first mission list in UN Central including old supply contracts and ultimatum. Existing saved failure reasons are unknown unless recorded; no retrospective assumptions. All original mission deadlines, guest rules, reward amounts, map cleanup and combat conditions are retained. The other five development packages are not yet integrated. CI-base is not the final installable version.
+
 ## Install
 
-Install the finalized `UN_Peacekeepers_v0.3.5-alpha.zip`, not the GitHub Actions CI-base archive. The repository still has the older 20 armor PNGs; `tools/assets-approved-v033.json` records the approved handover hashes. `tools/finalize_approved.py` combines the verified CI-base with the user's approved v0.3.2 ZIP, verifies all 24 asset hashes, and produces the full installable ZIP. Direct binary synchronization to GitHub remains outstanding. Extract `UNPeacekeepers` into the game's Mods folder, replacing the previous mod folder. Keep a copy of the old mod and save. Load a COPY of your save for alpha testing. No game DLLs are shipped. Existing v0.2.9 supply orders retain their original handover and rewards; new orders use the new pool.
+Continue using the finalized `UN_Peacekeepers_v0.3.5-alpha.zip` until the complete v0.3.6 release, unless explicitly testing an approved-assets intermediate archive. Do not install the GitHub Actions CI-base archive. The repository still has the older 20 armor PNGs; `tools/assets-approved-v033.json` records the approved handover hashes. `tools/finalize_approved.py` combines the verified CI-base with the user's approved v0.3.2 ZIP, verifies all 24 asset hashes, and produces the full installable ZIP. Direct binary synchronization to GitHub remains outstanding. Extract `UNPeacekeepers` into the game's Mods folder, replacing the previous mod folder. Keep a copy of the old mod and save. Load a COPY of your save for alpha testing. No game DLLs are shipped. Existing v0.2.9 supply orders retain their original handover and rewards; new orders use the new pool.
 
 ## Core implementation
 

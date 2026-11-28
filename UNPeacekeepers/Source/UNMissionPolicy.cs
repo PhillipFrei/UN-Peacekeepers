@@ -5,6 +5,14 @@ namespace UNPeacekeepers
     public static class UNMissionPolicy
     {
         public const int RefillTicks=180000, InactivityTicks=600000, MaxActive=5;
+        // 60,000 ticks = 24 game hours. Round UP so a live deadline never displays zero early.
+        public static int RemainingTicks(int limit,int elapsed)
+            =>(int)Math.Min(int.MaxValue,Math.Max(0L,(long)limit-Math.Max(0,elapsed)));
+        public static int TicksUntil(int deadline,int now)
+            =>(int)Math.Min(int.MaxValue,Math.Max(0L,(long)deadline-now));
+        public static int DisplayMinutes(int ticks)
+            =>(int)(((long)Math.Max(0,ticks)*1440+59999)/60000);
+        public static bool HasOfferDeadline(int tick)=>tick>0&&tick<int.MaxValue;
         public static int RemainingAfterDropDispatch(int pending,bool dispatched)=>dispatched?0:Math.Max(0,pending);
         public static int RemainingAfterPlacement(int pending,int placed)=>Math.Max(0,pending-Math.Max(0,placed));
         // A native terminal state, acceptance and a proven objective are required for success.

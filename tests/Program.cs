@@ -79,6 +79,15 @@ class Program
         Check(UNMissionPolicy.RemainingAfterDropDispatch(1500,false)==1500,"No pod: keep pending silver");
         Check(UNMissionPolicy.RemainingAfterDropDispatch(1500,true)==0,"Dispatched pod clears full payment");
         Check(UNMissionPolicy.RemainingAfterDropDispatch(0,true)==0,"Dispatched payment cannot be replayed");
+        // Display arithmetic: one game day is 60,000 ticks, round up until deadline.
+        Check(UNMissionPolicy.DisplayMinutes(60000)==1440,"24 hours per game day");
+        Check(UNMissionPolicy.DisplayMinutes(2500)==60,"Game hour");
+        Check(UNMissionPolicy.DisplayMinutes(1)==1&&UNMissionPolicy.DisplayMinutes(0)==0&&UNMissionPolicy.DisplayMinutes(-1)==0,"No premature zero");
+        Check(UNMissionPolicy.DisplayMinutes(62500)==1500,"Day and hour");
+        Check(UNMissionPolicy.DisplayMinutes(int.MaxValue)>0,"Long display avoids overflow");
+        Check(UNMissionPolicy.RemainingTicks(60000,60000)==0&&UNMissionPolicy.RemainingTicks(60000,60001)==0&&UNMissionPolicy.RemainingTicks(60000,59999)==1,"Exact mission deadline display");
+        Check(UNMissionPolicy.TicksUntil(100,101)==0&&UNMissionPolicy.TicksUntil(100,99)==1,"Absolute deadline display");
+        Check(!UNMissionPolicy.HasOfferDeadline(-1)&&!UNMissionPolicy.HasOfferDeadline(0)&&!UNMissionPolicy.HasOfferDeadline(int.MaxValue)&&UNMissionPolicy.HasOfferDeadline(180000),"Offer deadline sentinels");
         // Only active site reservations, home maps, protected units and native safety block removal.
         for(int mask=0;mask<16;mask++)
             Check(UNMissionPolicy.CanCloseSite((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0)==(mask==0),"Cleanup blockers "+mask);

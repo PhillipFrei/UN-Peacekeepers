@@ -30,7 +30,7 @@ namespace UNPeacekeepers
             {
                 option.link=new DiaNode(active.DescriptionPart);
                 option.link.options.Add(new DiaOption("UN029_Deliver".Translate()){resolveTree=true,action=()=>active.Deliver(pawn)});
-                option.link.options.Add(new DiaOption("UN029_Cancel".Translate()){resolveTree=true,action=()=>{if(active.quest.State==QuestState.Ongoing)active.quest.End(QuestEndOutcome.Fail);}});
+                option.link.options.Add(new DiaOption("UN029_Cancel".Translate()){resolveTree=true,action=()=>{if(active.quest.State==QuestState.Ongoing)active.EndFailed(UNMissionFailure.Cancelled);}});
                 option.link.options.Add(new DiaOption("GoBack".Translate()){linkLateBind=()=>FactionDialogMaker.FactionDialogFor(pawn,un)});
                 return option;
             }
@@ -70,13 +70,28 @@ namespace UNPeacekeepers
     {
         public bool advanced;
         private readonly UNSupplyProgress progress=new UNSupplyProgress();
+        private int failureReason;
+        public void EndFailed(UNMissionFailure reason)
+        {
+            failureReason=(int)reason;quest.End(QuestEndOutcome.Fail);
+        }
         public int Required=>advanced?30:40;
         public int Reward=>advanced?20:10;
         public ThingDef Supply=>DefDatabase<ThingDef>.GetNamed(advanced?"MedicineIndustrial":"MealSurvivalPack");
         public static string Terms(bool advanced)=>"UN029_Terms".Translate(advanced?30:40,
             DefDatabase<ThingDef>.GetNamed(advanced?"MedicineIndustrial":"MealSurvivalPack").label,advanced?20:10).ToString();
-        public override string DescriptionPart=>Terms(advanced)+"\n\n"+"UN029_Progress".Translate(progress.Delivered,Required,
-            Math.Max(0,600000-quest.TicksSinceAccepted)/60000f);
+        public override string DescriptionPart
+        {
+            get
+            {
+                if(quest==null)return null;
+                string header=UNQuestDisplay.Header(quest,UNMissionPolicy.RemainingTicks(600000,quest.TicksSinceAccepted));
+                if(quest.State==QuestState.EndedFailed)return header+"\n"+UNQuestDisplay.Failed((UNMissionFailure)failureReason);
+                if(quest.State==QuestState.Ongoing)
+                    return header+"\n"+"UNQ_LegacyProgress".Translate(progress.Delivered,Required)+"\n"+UNQuestDisplay.Next("UNQ_NextLegacySupply".Translate());
+                return header;
+            }
+        }
         public override IEnumerable<Faction> InvolvedFactions { get {var un=Authorization.GetUN();if(un!=null)yield return un;} }
         public override void ExposeData()
         {
@@ -84,6 +99,7 @@ namespace UNPeacekeepers
             Scribe_Values.Look(ref advanced,"unSupplyAdvanced",false);
             Scribe_Values.Look(ref progress.Delivered,"unSupplyDelivered",0);
             Scribe_Values.Look(ref progress.Rewarded,"unSupplyRewarded",false);
+            Scribe_Values.Look(ref failureReason,"unFailureReason",0);
         }
         public override void QuestPartTick()
         {
@@ -95,7 +111,7 @@ namespace UNPeacekeepers
             if(quest.State!=QuestState.Ongoing)return;
             if(progress.Delivered<Required)
             {
-                if(UNSupplyProgress.Expired(quest.TicksSinceAccepted))quest.End(QuestEndOutcome.Fail);
+                if(UNSupplyProgress.Expired(quest.TicksSinceAccepted))EndFailed(UNMissionFailure.Deadline);
                 return;
             }
             if(!progress.Rewarded)
@@ -113,7 +129,7 @@ namespace UNPeacekeepers
         {
             var un=Authorization.GetUN();
             if(progress.Rewarded || quest.State!=QuestState.Ongoing)return;
-            if(UNSupplyProgress.Expired(quest.TicksSinceAccepted)){quest.End(QuestEndOutcome.Fail);return;}
+            if(UNSupplyProgress.Expired(quest.TicksSinceAccepted)){EndFailed(UNMissionFailure.Deadline);return;}
             if(un==null || un.defeated || un.deactivated || un.PlayerGoodwill<0 || pawn?.Map==null || !pawn.Map.IsPlayerHome)
             {Messages.Message("UN_C_Unavailable".Translate(),MessageTypeDefOf.RejectInput,false);return;}
             // Only real, spawned, reachable and non-forbidden goods on the negotiator's home map.
@@ -127,7 +143,7 @@ namespace UNPeacekeepers
                 progress.Delivered+=count;
             }
             if(progress.Delivered<Required)
-            {Messages.Message("UN029_Progress".Translate(progress.Delivered,Required,Math.Max(0,600000-quest.TicksSinceAccepted)/60000f),MessageTypeDefOf.NeutralEvent,false);return;}
+            {Messages.Message(DescriptionPart,MessageTypeDefOf.NeutralEvent,false);return;}
             // The manager completes this accepted delivery on its next poll.
         }
     }

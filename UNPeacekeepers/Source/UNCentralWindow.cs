@@ -162,12 +162,22 @@ namespace UNPeacekeepers
             {
                 Label(width,ref y,ultimatum.StatusText,ultimatum.HasActive?Amber:Muted);
                 if(Widgets.ButtonText(new Rect(0,y,Math.Min(320,width),30),"UN_Central_SelectLeader".Translate()))ultimatum.SelectLeaderMenu();
-                if(!ultimatum.HasActive)y+=38;
+                y+=38;
             }
             Section(width,ref y,"UN_Central_ActiveMissions".Translate());
             var active=Find.QuestManager.QuestsListForReading.Where(q=>q.State==QuestState.Ongoing && q.root!=null && q.root.defName.StartsWith("UN_",StringComparison.Ordinal)).ToList();
             if(active.Count==0)Label(width,ref y,"UN_Central_NoMissions".Translate(),Muted);
-            foreach(var quest in active)Label(width,ref y,"• "+quest.name);
+            foreach(var quest in active)
+            {
+                Label(width,ref y,"• "+quest.name,null,GameFont.Medium);
+                var mission=quest.GetFirstPartOfType<UNMissionObjective>();
+                var legacy=quest.GetFirstPartOfType<QuestPart_UNSupply>();
+                var ultimatumPart=quest.GetFirstPartOfType<QuestPart_UNUltimatum>();
+                // The detailed mission pool renders all objective conditions; the overview shows the live status.
+                if(mission!=null)Label(width,ref y,UNQuestDisplay.Header(quest,mission.RemainingTicks),Muted);
+                else if(legacy!=null)Label(width,ref y,legacy.DescriptionPart,Muted);
+                else if(ultimatumPart!=null)Label(width,ref y,ultimatumPart.DescriptionPart,Muted);
+            }
             if(Widgets.ButtonText(new Rect(0,y,Math.Min(320,width),30),"UN_Central_MissionPool".Translate()))UNMissionManager.Open();
             y+=38;
         }
