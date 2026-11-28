@@ -346,6 +346,9 @@ namespace UNPeacekeepers
         private List<Pawn> guestPickup=new List<Pawn>();
         private bool guestPickupActive,guestPickupAborting,guestUnloadOrdered;
         private int nextGuestPickupAttempt;
+        // Transient UI observations populated only by the mission poll, never by drawing the quest.
+        private readonly HashSet<string> guestNeedsPickup=new HashSet<string>();
+        private readonly HashSet<string> guestShuttleUnreachable=new HashSet<string>();
         private bool guestLaunchAllBoarded,guestLaunchAllEligible,guestLaunchAnyBoarded,guestLaunchBeforeDeadline;
         bool HasGuestPhase=>UNMissionPolicy.UsesGuestStay(kind);
         public bool IsMissionGuest(Pawn pawn)=>HasGuestPhase&&pawn!=null&&guestSince.ContainsKey(pawn.ThingID)&&!departedGuests.Contains(pawn.ThingID);
@@ -586,6 +589,7 @@ namespace UNPeacekeepers
         }
         void ProcessGuests()
         {
+            guestNeedsPickup.Clear();guestShuttleUnreachable.Clear();
             // The original field-hospital path does not require transporting people home.
             if(kind==1&&guestSince.Count==0&&departedGuests.Count==0&&targets.Count==patientCount&&
                 targets.All(p=>p!=null&&p.Spawned&&p.Map==destination.Map&&MedicallyRecovered(p)))
@@ -639,7 +643,7 @@ namespace UNPeacekeepers
                 bool exitAvailable=!pawn.Downed&&RCellFinder.TryFindBestExitSpot(pawn,out IntVec3 exit);
                 if(UNMissionPolicy.NeedsGuestPickup(GuestSince(pawn),now,true,pawn.Downed,exitAvailable))
                 {
-                    StayAtColony(pawn);pickupCandidates.Add(pawn);continue;
+                    guestNeedsPickup.Add(id);StayAtColony(pawn);pickupCandidates.Add(pawn);continue;
                 }
                 if(!(pawn.GetLord()?.LordJob is LordJob_ExitMapBest))
                 {
@@ -667,6 +671,7 @@ namespace UNPeacekeepers
                     if(pawn.CurJob?.def==enter)continue;
                     if(pawn.CanReach(shuttle.shipThing,PathEndMode.Touch,Danger.Some))
                         pawn.jobs.TryTakeOrderedJob(JobMaker.MakeJob(enter,shuttle.shipThing));
+                    else guestShuttleUnreachable.Add(pawn.ThingID);
                 }
             }
         }
@@ -850,12 +855,12 @@ namespace UNPeacekeepers
                     if(OnPickupShuttle(pawn))state="UNG_Boarded".Translate();
                     else if(!PickupLanded)state="UNG_PickupRequestedPerson".Translate();
                     else if(pawn.Downed)state="UNG_CarryToShuttle".Translate();
-                    else if(pawn.Spawned&&!pawn.CanReach(shuttle.shipThing,PathEndMode.Touch,Danger.Some))state="UNG_ShuttleUnreachable".Translate();
+                    else if(pawn.Spawned&&guestShuttleUnreachable.Contains(pawn.ThingID))state="UNG_ShuttleUnreachable".Translate();
                     else state="UNG_BoardShuttle".Translate();
                 }
                 else if(!pawn.Spawned)state="UNG_HeldReady".Translate();
                 else if(UNMissionPolicy.NeedsGuestPickup(GuestSince(pawn),now,true,pawn.Downed,
-                    !pawn.Downed&&RCellFinder.TryFindBestExitSpot(pawn,out IntVec3 exit)))
+                    !guestNeedsPickup.Contains(pawn.ThingID)))
                     state=shuttle!=null?"UNG_NextPickupBatch".Translate().ToString():"UNG_WaitPickup".Translate().ToString();
                 else state="UNG_ExitGrace".Translate(UNQuestDisplay.Time(UNMissionPolicy.ExitGraceRemaining(GuestSince(pawn),now)));
                 lines.Add(pawn.LabelShortCap+": "+state);
