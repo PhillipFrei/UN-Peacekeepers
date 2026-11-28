@@ -341,7 +341,8 @@ namespace UNPeacekeepers
         bool HasGuestPhase=>UNMissionPolicy.UsesGuestStay(kind);
         public bool IsMissionGuest(Pawn pawn)=>HasGuestPhase&&pawn!=null&&guestSince.ContainsKey(pawn.ThingID)&&!departedGuests.Contains(pawn.ThingID);
         bool GuestDeparted(Pawn pawn)=>pawn!=null&&departedGuests.Contains(pawn.ThingID);
-        bool OnHome(Pawn pawn)=>pawn!=null&&pawn.Spawned&&homeMap!=null&&pawn.Map==homeMap&&Find.Maps.Contains(homeMap);
+        bool OnHomeHeld(Pawn pawn)=>pawn!=null&&homeMap!=null&&pawn.MapHeld==homeMap&&Find.Maps.Contains(homeMap);
+        bool OnHome(Pawn pawn)=>OnHomeHeld(pawn)&&pawn.Spawned;
         bool GuestHealthy(Pawn pawn)=>pawn!=null&&!pawn.Dead&&pawn.health!=null&&pawn.health.hediffSet.BleedRateTotal<=0f&&
             !pawn.health.hediffSet.HasHediff(HediffDefOf.Anesthetic)&&(kind!=1||MedicallyRecovered(pawn));
         bool GuestFactionValid=>supportedFaction!=null&&!supportedFaction.defeated&&!supportedFaction.deactivated&&!supportedFaction.HostileTo(Faction.OfPlayer);
@@ -486,9 +487,12 @@ namespace UNPeacekeepers
                 if(guestPickupActive&&guestPickup.Contains(pawn))continue;
                 if(!OnHome(pawn))
                 {
-                    if(guestSince.ContainsKey(id))guestSince[id]=-1;
+                    // Carrying a guest to a bed on the home map must not erase a valid stay.
+                    // An actual departure from the map, relapse, or loss of guest status does.
+                    if(guestSince.ContainsKey(id)&&(!OnHomeHeld(pawn)||!GuestHealthy(pawn)||!IsNativeGuest(pawn)))guestSince[id]=-1;
                     continue;
                 }
+                if(guestSince.ContainsKey(id)&&!IsNativeGuest(pawn))guestSince[id]=-1;
                 if(!GuestHealthy(pawn))
                 {
                     // A relapse restarts the required uninterrupted day; retain the visitor status.
@@ -625,15 +629,19 @@ namespace UNPeacekeepers
         {
             int now=Find.TickManager.TicksGame;
             var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
-            var lines=new List<string>{
-                "UNMS_GuestProgress".Translate(departedGuests.Count+remaining.Count(p=>OnHome(p)),departedGuests.Count+remaining.Count(p=>OnHome(p)&&GuestHealthy(p)),
-                    departedGuests.Count+remaining.Count(p=>OnHome(p)&&ReadyToLeave(p,now)),departedGuests.Count,patientCount).ToString()};
+            var lines=new List<string>();
+            // Keep the original medical count for field-hospital treatment and mixed groups.
+            if(kind==1)lines.Add("UNMS_Recovered".Translate(departedGuests.Count+remaining.Count(MedicallyRecovered),patientCount).ToString());
+            if(kind!=1||guestSince.Count>0||departedGuests.Count>0||remaining.Any(OnHomeHeld))
+                lines.Add("UNMS_GuestProgress".Translate(departedGuests.Count+remaining.Count(OnHomeHeld),
+                    departedGuests.Count+remaining.Count(p=>OnHomeHeld(p)&&GuestHealthy(p)),
+                    departedGuests.Count+remaining.Count(p=>OnHomeHeld(p)&&ReadyToLeave(p,now)),departedGuests.Count,patientCount).ToString());
             foreach(var pawn in targets.Where(p=>p!=null))
             {
                 string state;
                 if(GuestDeparted(pawn))state="UNMS_GuestDeparted".Translate();
                 else if(!GuestHealthy(pawn))state=(pawn.health?.hediffSet.HasHediff(HediffDefOf.Anesthetic)==true?"UNMS_Anesthetized":"UNMS_Unwell").Translate();
-                else if(!OnHome(pawn))state=kind==1?"UNMS_Well".Translate().ToString():"UNMS_GuestNeedsHome".Translate().ToString();
+                else if(!OnHomeHeld(pawn))state=kind==1?"UNMS_Well".Translate().ToString():"UNMS_GuestNeedsHome".Translate().ToString();
                 else if(guestSince.TryGetValue(pawn.ThingID,out int since)&&since>=0)
                     state=UNMissionPolicy.GuestStayComplete(since,now)?"UNMS_GuestLeaving".Translate().ToString():
                         "UNMS_GuestHours".Translate(UNMissionPolicy.GuestTicksRemaining(since,now)/2500f).ToString();
