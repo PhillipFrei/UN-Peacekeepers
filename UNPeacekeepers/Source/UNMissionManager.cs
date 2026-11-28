@@ -82,6 +82,7 @@ namespace UNPeacekeepers
                 MaintainPool(un.PlayerGoodwill,now);
             }
             supplementOffers.RemoveAll(q=>q==null||q.State!=QuestState.NotYetAccepted);
+            UNMissionSites.CleanupCompletedSites();
             DeliverParcels();
         }
         void MaintainPool(int goodwill,int now)

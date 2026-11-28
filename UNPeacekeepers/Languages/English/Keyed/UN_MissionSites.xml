@@ -53,4 +53,6 @@
   <UNMS_Anesthetized>Anesthetized – wait for recovery</UNMS_Anesthetized>
   <UNMS_BionicRequired>Required replacement: {0} – {1}</UNMS_BionicRequired>
   <UNMS_ShuttleWaiting>UN pickup shuttle: board every patient.</UNMS_ShuttleWaiting>
+  <UNMS_CleanupReady>Cleared operation site: will automatically disappear from the world map.</UNMS_CleanupReady>
+  <UNMS_CleanupWaiting>Operation ended. Automatic removal waits for safe clearance (people, cargo, buildings or incoming transports).</UNMS_CleanupWaiting>
 </LanguageData>

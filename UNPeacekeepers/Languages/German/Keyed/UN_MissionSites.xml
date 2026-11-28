@@ -53,4 +53,6 @@
   <UNMS_Anesthetized>Narkose – auf Erwachen warten</UNMS_Anesthetized>
   <UNMS_BionicRequired>Erforderlicher Ersatz: {0} – {1}</UNMS_BionicRequired>
   <UNMS_ShuttleWaiting>UN-Abholshuttle: alle Patienten an Bord bringen.</UNMS_ShuttleWaiting>
+  <UNMS_CleanupReady>Geräumter Einsatzort: wird automatisch von der Weltkarte entfernt.</UNMS_CleanupReady>
+  <UNMS_CleanupWaiting>Einsatz beendet. Automatische Entfernung wartet auf sichere Räumung (Personen, Güter, Gebäude oder ankommende Transporte).</UNMS_CleanupWaiting>
 </LanguageData>

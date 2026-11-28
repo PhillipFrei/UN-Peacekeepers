@@ -12,6 +12,10 @@ namespace UNPeacekeepers
         // was omitted. A failed placement can still have merged part of the stack.
         public static int RemainingAfterAttempt(int before,int callbackRemaining,int requested,bool placed)
             =>placed?Math.Min(callbackRemaining,RemainingAfterPlacement(before,requested)):callbackRemaining;
+        public static bool CanCloseSite(bool reserved,bool playerHome,bool people,bool assets)
+            =>!reserved&&!playerHome&&!people&&!assets;
+        public static bool IsUnverifiedSiteItem(int originalCount,int currentCount)
+            =>currentCount>0&&(originalCount<0||currentCount>originalCount);
         public static int Threshold(int tier)=>tier==2?80:tier==1?50:0;
         public static int Goodwill(int tier)=>tier==2?30:tier==1?20:10;
         public static int BaseSilver(int tier)=>tier==2?10000:tier==1?5000:1500;

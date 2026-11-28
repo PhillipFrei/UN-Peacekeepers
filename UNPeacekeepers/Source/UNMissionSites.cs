@@ -16,6 +16,16 @@ namespace UNPeacekeepers
         public static bool Supports(int kind)=>kind>=0 && kind<=6 && (kind==0 || ModsConfig.RoyaltyActive);
         public static IEnumerable<UNMissionObjective> Pending => Find.QuestManager.QuestsListForReading.Where(q=>q.State==QuestState.Ongoing||q.State==QuestState.NotYetAccepted).SelectMany(q=>q.PartsListForReading).OfType<UNMissionObjective>();
         public static IEnumerable<UNMissionObjective> Active => Find.QuestManager.QuestsListForReading.Where(q=>q.State==QuestState.Ongoing).SelectMany(q=>q.PartsListForReading).OfType<UNMissionObjective>();
+        // Mapless camps are not covered by MapParent.CheckRemoveMapNow.
+        // Snapshot because removing a world object mutates the holder.
+        public static void CleanupCompletedSites()
+        {
+            foreach(var site in Find.WorldObjects.AllWorldObjects.OfType<UNMissionSite>().ToList())
+            {
+                try{site.TryAutomaticClose();}
+                catch(Exception ex){Log.Error("[UN Peacekeepers] Site cleanup failed for "+site.ID+": "+ex);}
+            }
+        }
         public static bool TryPrepare(int kind,int tier,Map home,Faction supported,float difficulty,out UNMissionObjective objective,out string reason)
         {
             objective=null;reason="UNMS_NoSite".Translate();
@@ -118,26 +128,135 @@ namespace UNPeacekeepers
     public sealed class UNMissionSite:Site
     {
         public int missionQuestId;
+        // Retain the old Scribe key. Old maps lack reliable original stack counts,
+        // so their remaining items are conservatively treated as unverified cargo.
         private HashSet<string> initialItems=new HashSet<string>();
-        public override void ExposeData(){base.ExposeData();Scribe_Values.Look(ref missionQuestId,"unMissionQuestId",-1);Scribe_Collections.Look(ref initialItems,"unInitialSiteItems",LookMode.Value);if(Scribe.mode==LoadSaveMode.PostLoadInit&&initialItems==null)initialItems=new HashSet<string>();}
+        private Dictionary<string,int> initialItemCounts=new Dictionary<string,int>();
+        private HashSet<string> missionStructures=new HashSet<string>(),missionPeople=new HashSet<string>();
+        private bool recordedMission;
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref missionQuestId,"unMissionQuestId",-1);
+            Scribe_Collections.Look(ref initialItems,"unInitialSiteItems",LookMode.Value);
+            Scribe_Collections.Look(ref initialItemCounts,"unInitialSiteItemCounts",LookMode.Value,LookMode.Value);
+            Scribe_Collections.Look(ref missionStructures,"unSiteStructures",LookMode.Value);
+            Scribe_Collections.Look(ref missionPeople,"unSitePeople",LookMode.Value);
+            Scribe_Values.Look(ref recordedMission,"unSiteRecordedMission",false);
+            if(Scribe.mode==LoadSaveMode.PostLoadInit)
+            {
+                if(initialItems==null)initialItems=new HashSet<string>();
+                if(initialItemCounts==null)initialItemCounts=new Dictionary<string,int>();
+                if(missionStructures==null)missionStructures=new HashSet<string>();
+                if(missionPeople==null)missionPeople=new HashSet<string>();
+            }
+        }
         public UNMissionObjective Objective=>Find.QuestManager.QuestsListForReading.FirstOrDefault(q=>q.id==missionQuestId)?.PartsListForReading.OfType<UNMissionObjective>().FirstOrDefault();
-        public override void PostMapGenerate(){base.PostMapGenerate();initialItems=new HashSet<string>(Map.listerThings.AllThings.Where(t=>t.def.category==ThingCategory.Item).Select(t=>t.ThingID));Objective?.Generate(Map);}
+        IEnumerable<Thing> SiteThings()
+        {
+            var held=new List<Thing>();
+            ThingOwnerUtility.GetAllThingsRecursively(Map,held,true);
+            // Pawn equipment travels with its owner; loose cargo and container contents do not.
+            return Map.listerThings.AllThings.Concat(held.Where(t=>ThingOwnerUtility.GetAnyParent<Pawn>(t)==null)).Distinct();
+        }
+        public override void PostMapGenerate()
+        {
+            base.PostMapGenerate();
+            initialItemCounts=SiteThings().Where(t=>t.def.category==ThingCategory.Item).ToDictionary(t=>t.ThingID,t=>t.stackCount);
+            initialItems=new HashSet<string>(initialItemCounts.Keys);
+            var objective=Objective;
+            if(objective!=null)
+            {
+                try{objective.Generate(Map);}
+                finally{RememberObjective(objective);}
+            }
+        }
+        void RememberObjective(UNMissionObjective objective)
+        {
+            if(objective==null)return;
+            recordedMission=true;
+            foreach(var t in objective.ownedStructures.Where(t=>t!=null))missionStructures.Add(t.ThingID);
+            foreach(var p in objective.targets.Where(p=>p!=null))missionPeople.Add(p.ThingID);
+        }
+        bool Reserved
+        {
+            get
+            {
+                foreach(var q in Find.QuestManager.QuestsListForReading)
+                {
+                    var o=q.GetFirstPartOfType<UNMissionObjective>();
+                    if(o?.destination!=this && q.id!=missionQuestId)continue;
+                    if(q.State==QuestState.Ongoing||q.State==QuestState.NotYetAccepted)return true;
+                    // Do not race Package 1's reward processing and optional follow-up generation.
+                    var r=q.GetFirstPartOfType<UNMissionReward>();
+                    if(q.State==QuestState.EndedSuccess&&r!=null&&!r.settled)return true;
+                }
+                return false;
+            }
+        }
         public bool CanSafelyClose
         {
             get
             {
-                if(UNMissionSites.Pending.Any(o=>o.destination==this))return false;
+                if(!Spawned||Destroyed||Reserved||Faction==Faction.OfPlayer)return false;
                 if(!HasMap)return true;
-                var owned=Objective?.ownedStructures??new List<Thing>();
-                return !Map.mapPawns.AllPawnsSpawned.Any(p=>p.Faction==Faction.OfPlayer||p.IsPrisonerOfColony||p.IsSlaveOfColony||Objective?.targets.Contains(p)==true) &&
-                    !Map.listerThings.AllThings.Any(t=>(t.def.category==ThingCategory.Item&&!initialItems.Contains(t.ThingID))||(t.Faction==Faction.OfPlayer&&!owned.Contains(t)));
+                if(Map.IsPlayerHome)return false;
+                RememberObjective(Objective);
+                // Keep RimWorld's own checks for incoming transport, pocket maps and blocking buildings.
+                if(!base.ShouldRemoveMapNow(out bool vanillaRemove)||!vanillaRemove)return false;
+                var pendingPeople=new HashSet<Pawn>(UNMissionSites.Pending.SelectMany(o=>o.targets).Where(p=>p!=null));
+                bool people=Map.mapPawns.AllPawns.Any(p=>p.Faction==Faction.OfPlayer||p.IsPrisonerOfColony||p.IsSlaveOfColony||
+                    missionPeople.Contains(p.ThingID)||pendingPeople.Contains(p)||!recordedMission);
+                bool assets=SiteThings().Any(t=>
+                {
+                    if(t is Pawn)return false;
+                    if(t.Faction==Faction.OfPlayer&&!missionStructures.Contains(t.ThingID))return true;
+                    if(t is Corpse corpse&&(corpse.InnerPawn.Faction==Faction.OfPlayer||missionPeople.Contains(corpse.InnerPawn.ThingID)))return true;
+                    if(t.def.category!=ThingCategory.Item)return false;
+                    int original;
+                    return UNMissionPolicy.IsUnverifiedSiteItem(initialItemCounts.TryGetValue(t.ThingID,out original)?original:-1,t.stackCount);
+                });
+                return UNMissionPolicy.CanCloseSite(false,false,people,assets);
             }
         }
         public override bool ShouldRemoveMapNow(out bool alsoRemoveWorldObject)
         {
-            // Quest targets, player gear and player pawns must not be silently discarded on departure.
-            alsoRemoveWorldObject=false;
-            return false;
+            alsoRemoveWorldObject=HasMap&&CanSafelyClose;
+            return alsoRemoveWorldObject;
+        }
+        public void TryAutomaticClose()
+        {
+            if(!Spawned||Destroyed||Reserved||Faction==Faction.OfPlayer)return;
+            if(HasMap)
+            {
+                if(Map.IsPlayerHome)return;
+                // Defence civilians normally remain in their defend lord. After success, let
+                // those exact civilians leave by normal AI rather than silently deleting them.
+                var q=Find.QuestManager.QuestsListForReading.FirstOrDefault(x=>x.id==missionQuestId);
+                var o=Objective;
+                RememberObjective(o);
+                if(q?.State==QuestState.EndedSuccess&&o!=null&&(o.kind==1||o.kind==4||o.kind==5))
+                {
+                    foreach(var pawn in o.targets.Where(p=>p!=null&&!p.Dead&&!p.Downed&&p.Spawned&&p.Map==Map&&
+                        p.Faction==o.supportedFaction&&p.Faction!=Faction.OfPlayer&&!p.IsPrisonerOfColony&&!p.IsSlaveOfColony&&
+                        !p.Faction.HostileTo(Faction.OfPlayer)).ToList())
+                    {
+                        var lord=pawn.GetLord();
+                        if(lord?.LordJob is LordJob_ExitMapBest)continue;
+                        lord?.Notify_PawnLost(pawn,PawnLostCondition.LeftVoluntarily);
+                        LordMaker.MakeNewLord(pawn.Faction,new LordJob_ExitMapBest(),Map,new[]{pawn});
+                    }
+                }
+                CheckRemoveMapNow();
+            }
+            else if(CanSafelyClose)Destroy();
+        }
+        public override string GetInspectString()
+        {
+            var result=base.GetInspectString();
+            if(!Reserved&&Spawned&&!Destroyed)
+                result+="\n"+(CanSafelyClose?"UNMS_CleanupReady":"UNMS_CleanupWaiting").Translate();
+            return result;
         }
         public override IEnumerable<Gizmo> GetGizmos()
         {
@@ -147,9 +266,9 @@ namespace UNPeacekeepers
                 var current=o;
                 if(HasMap && (o.kind==0||o.kind==2||o.kind==3))yield return new Command_Action{defaultLabel=(o.kind==0?"UNMS_Deliver":"UNMS_TakeCustody").Translate(),defaultDesc=current.OfferDescription,icon=TexButton.Info,action=()=>current.Review(Map)};
             }
-            if(!UNMissionSites.Pending.Any(o=>o.destination==this))
+            if(!Reserved)
             {
-                var close=new Command_Action{defaultLabel="UNMS_RemoveSite".Translate(),defaultDesc="UNMS_UnsafeCleanup".Translate(),icon=TexButton.Info,action=()=>{if(CanSafelyClose){if(HasMap)Current.Game.DeinitAndRemoveMap(Map,false);Destroy();}}};
+                var close=new Command_Action{defaultLabel="UNMS_RemoveSite".Translate(),defaultDesc="UNMS_UnsafeCleanup".Translate(),icon=TexButton.Info,action=()=>{if(CanSafelyClose){if(HasMap)CheckRemoveMapNow();else Destroy();}}};
                 if(!CanSafelyClose)close.Disable("UNMS_UnsafeCleanup".Translate());
                 yield return close;
             }
