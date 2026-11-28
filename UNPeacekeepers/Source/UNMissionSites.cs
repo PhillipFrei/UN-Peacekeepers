@@ -172,6 +172,8 @@ namespace UNPeacekeepers
         private string requiredBionic;
         private bool achieved;
         public bool CanRewardSuccess=>achieved;
+        public bool CompletionRequested=>finished;
+        public void RequestCompletion(bool success)=>Finish(success);
         private QuestPart_ExtraFaction custody;
         private bool started,generated,finished,shuttleSent,shuttleSatisfied;
         private int began=-1,nextPoll;
@@ -281,7 +283,8 @@ namespace UNPeacekeepers
         void Finish(bool success)
         {
             if(finished||quest.State!=QuestState.Ongoing)return;
-            achieved=success;finished=true;UNMissionManager.Instance?.Complete(quest.id,success);
+            // Record the proven outcome. The game component ends the quest outside quest/signal callbacks.
+            achieved=success;finished=true;
         }
         public void DeliverCaravan(Caravan caravan)
         {

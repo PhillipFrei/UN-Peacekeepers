@@ -63,6 +63,19 @@ class Program
         Check(UNMissionPolicy.ExcessSilver(100,20)+UNMissionPolicy.ScaledSilver(1,1)==7000,"Advanced at cap");
         Check(UNMissionPolicy.ExcessSilver(100,30)+UNMissionPolicy.ScaledSilver(2,1)==13000,"Elite at cap");
         Check(UNMissionPolicy.ScaledSilver(1,5)==25000&&UNMissionPolicy.ExcessSilver(95,20)==1500,"Difficulty scales regular silver only");
+        // Native End must be confirmed before rewards; duplicate callbacks and partial objectives never pay.
+        foreach(bool accepted in new[]{false,true})
+        foreach(bool settled in new[]{false,true})
+        foreach(bool achieved in new[]{false,true})
+        {
+            Check(!UNMissionPolicy.CanSettle(accepted,settled,false,false,achieved),"Ongoing quest never settles");
+            Check(UNMissionPolicy.CanSettle(accepted,settled,true,false,achieved)==(accepted&&!settled&&achieved),"Success requires accepted proven objective");
+            Check(UNMissionPolicy.CanSettle(accepted,settled,false,true,achieved)==(accepted&&!settled),"Failure settles once");
+        }
+        Check(UNMissionPolicy.RemainingAfterAttempt(1500,1000,500,true)==1000,"Placement callback not counted twice");
+        Check(UNMissionPolicy.RemainingAfterAttempt(1500,1500,500,true)==1000,"Successful placement without callback");
+        Check(UNMissionPolicy.RemainingAfterAttempt(1500,1350,500,false)==1350,"Partial merge on failure");
+        Check(UNMissionPolicy.RemainingAfterAttempt(1500,1500,500,false)==1500,"Blocked placement preserves balance");
         // Failure after merging some silver must leave only the undelivered remainder.
         int pending=1500, physical=0;
         foreach(int actual in new[]{120,380}){pending=UNMissionPolicy.RemainingAfterPlacement(pending,actual);physical+=actual;}

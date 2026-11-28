@@ -1,7 +1,7 @@
 name: Build and verify UN Peacekeepers
 on:
   push:
-    branches: [main, release/0.3.0-alpha, release/0.3.1-alpha, release/0.3.2-alpha]
+    branches: [main, release/0.3.0-alpha, release/0.3.1-alpha, release/0.3.2-alpha, release/0.3.3-alpha]
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
         run: python3 tools/package.py
       - uses: actions/upload-artifact@v4
         with:
-          name: UN-Peacekeepers-v0.3.2-alpha-complete
+          name: UN-Peacekeepers-${{ github.ref_name == 'release/0.3.3-alpha' && 'v0.3.3-alpha-development' || 'v0.3.2-alpha-complete' }}
           path: |
             UN_Peacekeepers_v0.3.2-alpha.zip
             UN_Peacekeepers_v0.3.2-alpha.zip.sha256

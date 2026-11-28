@@ -28,6 +28,7 @@ namespace UNPeacekeepers
         public Faction supported;
         public Map home;
         public bool started, settled, optional, supplementOffered;
+        public bool silverQueued, unGoodwillAttempted, supportedGoodwillAttempted;
         public int parentId=-1;
         public override bool RequiresAccepter=>true;
         public override string DescriptionPart=>"UNM_Reward".Translate(silver,UNMissionPolicy.Goodwill(tier),supported?.Name??"—",(difficulty*100).ToString("0")).ToString();
@@ -38,6 +39,7 @@ namespace UNPeacekeepers
             Scribe_References.Look(ref supported,"supported");Scribe_References.Look(ref home,"home");
             Scribe_Values.Look(ref optional,"optional",false);Scribe_Values.Look(ref supplementOffered,"supplementOffered",false);Scribe_Values.Look(ref parentId,"parentId",-1);
             Scribe_Values.Look(ref started,"started",false);Scribe_Values.Look(ref settled,"settled",false);
+            Scribe_Values.Look(ref silverQueued,"silverQueued",false);Scribe_Values.Look(ref unGoodwillAttempted,"unGoodwillAttempted",false);Scribe_Values.Look(ref supportedGoodwillAttempted,"supportedGoodwillAttempted",false);
         }
     }
     public sealed class UNMissionManager : GameComponent
@@ -45,7 +47,7 @@ namespace UNPeacekeepers
         private List<UNMissionSlot> slots=new List<UNMissionSlot>();
         private List<Quest> supplementOffers=new List<Quest>();
         private List<UNSilverParcel> parcels=new List<UNSilverParcel>();
-        private int nextInactivity=-1, nextCheck;
+        private int nextInactivity=-1, nextCheck, nextCompletionCheck;
         internal static Faction exactRewardFaction;
         public UNMissionManager(Game game){}
         public static UNMissionManager Instance=>Current.Game?.GetComponent<UNMissionManager>();
@@ -65,6 +67,7 @@ namespace UNPeacekeepers
         {
             if(Current.ProgramState!=ProgramState.Playing||Find.FactionManager==null)return;
             int now=Find.TickManager.TicksGame;
+            if(now>=nextCompletionCheck){nextCompletionCheck=now+250;ProcessCompletions();}
             if(now<nextCheck)return;nextCheck=now+2500;
             if(nextInactivity<0)nextInactivity=now+UNMissionPolicy.InactivityTicks;
             var un=Authorization.GetUN();
@@ -162,36 +165,87 @@ namespace UNPeacekeepers
         {
             var q=Find.QuestManager.QuestsListForReading.FirstOrDefault(x=>x.id==questId);
             if(q==null||q.State!=QuestState.Ongoing)return;
-            if(success && q.GetFirstPartOfType<UNMissionObjective>()?.CanRewardSuccess!=true)return;
-            Settle(q,success);
-            q.End(success?QuestEndOutcome.Success:QuestEndOutcome.Fail);
+            var objective=q.GetFirstPartOfType<UNMissionObjective>();
+            if(objective==null || (success&&!objective.CanRewardSuccess))return;
+            objective.RequestCompletion(success);
         }
-        public void Settle(Quest q,bool success)
+        void ProcessCompletions()
         {
-            var r=q.PartsListForReading.OfType<UNMissionReward>().FirstOrDefault();
-            if(r==null||!q.EverAccepted||r.settled)return;
-            if(success && q.GetFirstPartOfType<UNMissionObjective>()?.CanRewardSuccess!=true)return;
-            r.settled=true;
-            var un=Authorization.GetUN();
-            if(!success)
-            {if(un!=null&&!un.defeated&&!un.deactivated)UNContact.ApplyPrisonGoodwill(un,-5,"UNM_Failed".Translate(q.name));return;}
-            int g=UNMissionPolicy.Goodwill(r.tier);
-            int overflow=un==null||un.defeated||un.deactivated?0:UNMissionPolicy.ExcessSilver(un.PlayerGoodwill,g);
-            if(un!=null&&!un.defeated&&!un.deactivated)UNContact.ApplyPrisonGoodwill(un,g,q.name);
-            if(ValidSupported(r.supported))
+            // Snapshot: native End and supplemental offers can mutate QuestManager's collection.
+            foreach(var q in Find.QuestManager.QuestsListForReading.Where(IsManaged).ToList())
             {
-                var previous=exactRewardFaction;exactRewardFaction=r.supported;
-                try{r.supported.TryAffectGoodwillWith(Faction.OfPlayer,g,true,true);}
-                finally{exactRewardFaction=previous;}
+                try
+                {
+                    var r=q.GetFirstPartOfType<UNMissionReward>();
+                    var o=q.GetFirstPartOfType<UNMissionObjective>();
+                    if(q.State==QuestState.Ongoing && o?.CompletionRequested==true)
+                    {
+                        q.End(o.CanRewardSuccess?QuestEndOutcome.Success:QuestEndOutcome.Fail);
+                    }
+                    if(q.State==QuestState.EndedSuccess||q.State==QuestState.EndedFailed)
+                        Settle(q,r,o);
+                }
+                catch(Exception ex){Log.Error("[UN Peacekeepers] Quest completion retry for "+q.id+": "+ex);}
             }
-            parcels.Add(new UNSilverParcel{amount=r.silver+overflow,home=r.home,reason=q.name});
-            UNContact.Instance?.LogEvent("UNM_Payment".Translate(q.name,r.silver,overflow));
-            DeliverParcels();
+        }
+        void Settle(Quest q,UNMissionReward r,UNMissionObjective objective)
+        {
+            bool success=q.State==QuestState.EndedSuccess;
+            if(r==null||!UNMissionPolicy.CanSettle(q.EverAccepted,r.settled,success,q.State==QuestState.EndedFailed,objective?.CanRewardSuccess==true))return;
+            var un=Authorization.GetUN();
+            bool unAvailable=un!=null&&!un.defeated&&!un.deactivated;
+            if(!success)
+            {
+                if(!r.unGoodwillAttempted)
+                {
+                    r.unGoodwillAttempted=true;
+                    if(unAvailable)TryRewardStep(q,"failure goodwill",()=>UNContact.ApplyPrisonGoodwill(un,-5,"UNM_Failed".Translate(q.name)));
+                }
+                r.settled=true;
+                return;
+            }
+            int g=UNMissionPolicy.Goodwill(r.tier);
+            // Queue silver before goodwill changes, so overflow is computed from the pre-award balance.
+            if(!r.silverQueued)
+            {
+                int overflow=unAvailable?UNMissionPolicy.ExcessSilver(un.PlayerGoodwill,g):0;
+                parcels.Add(new UNSilverParcel{amount=r.silver+overflow,home=r.home,reason=q.name});
+                r.silverQueued=true;
+                TryRewardStep(q,"payment journal",()=>UNContact.Instance?.LogEvent("UNM_Payment".Translate(q.name,r.silver,overflow)));
+            }
+            // An exception from another mod may occur AFTER a faction mutation. Never replay an
+            // ambiguous goodwill call; log it, and continue the independent silver/other faction steps.
+            if(!r.unGoodwillAttempted)
+            {
+                r.unGoodwillAttempted=true;
+                if(unAvailable)TryRewardStep(q,"UN goodwill",()=>UNContact.ApplyPrisonGoodwill(un,g,q.name));
+            }
+            if(!r.supportedGoodwillAttempted)
+            {
+                r.supportedGoodwillAttempted=true;
+                if(ValidSupported(r.supported))TryRewardStep(q,"supported faction goodwill",()=>
+                {
+                    var previous=exactRewardFaction;exactRewardFaction=r.supported;
+                    try{r.supported.TryAffectGoodwillWith(Faction.OfPlayer,g,true,true);}
+                    finally{exactRewardFaction=previous;}
+                });
+            }
+            r.settled=true;
+            TryRewardStep(q,"silver delivery",DeliverParcels);
+            TryRewardStep(q,"supplemental offer",()=>OfferSupplement(q,r,objective));
+        }
+        static void TryRewardStep(Quest q,string step,Action action)
+        {
+            try{action();}
+            catch(Exception ex){Log.Error("[UN Peacekeepers] Quest "+q.id+" "+step+" failed: "+ex);}
+        }
+        void OfferSupplement(Quest q,UNMissionReward r,UNMissionObjective objective)
+        {
             if(!r.optional&&!r.supplementOffered)
             {
                 r.supplementOffered=true;
                 UNMissionObjective extra;
-                if(UNMissionSites.TryPrepareSupplement(q.GetFirstPartOfType<UNMissionObjective>(),Math.Min(1,r.tier),out extra))
+                if(UNMissionSites.TryPrepareSupplement(objective,Math.Min(1,r.tier),out extra))
                 {
                     var supplemental=Quest.MakeRaw();supplemental.root=q.root;
                     supplemental.name="UNM_Supplement".Translate(q.name);
@@ -216,11 +270,14 @@ namespace UNPeacekeepers
                 if(pawn==null)continue;
                 while(parcel.amount>0)
                 {
-                    var silver=ThingMaker.MakeThing(ThingDefOf.Silver);silver.stackCount=Math.Min(parcel.amount,ThingDefOf.Silver.stackLimit);
+                    int before=parcel.amount;
+                    var silver=ThingMaker.MakeThing(ThingDefOf.Silver);silver.stackCount=Math.Min(before,ThingDefOf.Silver.stackLimit);
+                    int requested=silver.stackCount;
                     // Native placement may merge part of a stack before reporting failure.
                     bool placed=GenPlace.TryPlaceThing(silver,pawn.Position,map,ThingPlaceMode.Near,
                         placedAction:(thing,count)=>parcel.amount=UNMissionPolicy.RemainingAfterPlacement(parcel.amount,count));
-                    if(!placed){if(!silver.Destroyed&&!silver.Spawned)silver.Destroy();break;}
+                    parcel.amount=UNMissionPolicy.RemainingAfterAttempt(before,parcel.amount,requested,placed);
+                    if(!placed||parcel.amount>=before){if(!silver.Destroyed&&!silver.Spawned)silver.Destroy();break;}
                 }
                 if(parcel.amount==0){parcels.Remove(parcel);UNContact.Instance?.LogEvent("UNM_PaymentDelivered".Translate(parcel.reason));}
             }
@@ -241,11 +298,26 @@ namespace UNPeacekeepers
         [HarmonyPatch(typeof(Quest),nameof(Quest.End))]
         static class EndGuard
         {
-            static bool Prefix(Quest __instance,QuestEndOutcome __0)
+            sealed class EndContext
             {
+                public UNMissionReward reward;
+                public UNMissionObjective objective;
+            }
+            static bool Prefix(Quest __instance,QuestEndOutcome __0,out EndContext __state)
+            {
+                __state=null;
                 if(!IsManaged(__instance)||__instance.State!=QuestState.Ongoing)return true;
-                if(__0==QuestEndOutcome.Success&&__instance.GetFirstPartOfType<UNMissionObjective>()?.CanRewardSuccess!=true)return false;
-                Instance?.Settle(__instance,__0==QuestEndOutcome.Success);return true;
+                var objective=__instance.GetFirstPartOfType<UNMissionObjective>();
+                if(__0==QuestEndOutcome.Success&&objective?.CanRewardSuccess!=true)return false;
+                __state=new EndContext{reward=__instance.GetFirstPartOfType<UNMissionReward>(),objective=objective};
+                return true;
+            }
+            static void Postfix(Quest __instance,EndContext __state)
+            {
+                // A skipped End or failed state transition must never award anything.
+                if(__state==null)return;
+                try{Instance?.Settle(__instance,__state.reward,__state.objective);}
+                catch(Exception ex){Log.Error("[UN Peacekeepers] Settlement failed for quest "+__instance.id+": "+ex);}
             }
         }
         [HarmonyPatch(typeof(Faction),nameof(Faction.CalculateAdjustedGoodwillChange))]
