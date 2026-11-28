@@ -110,6 +110,17 @@ class Program
         }
         Check(UNMissionPolicy.CanDispatchSilver(1500,false,100,100)&&!UNMissionPolicy.CanDispatchSilver(1500,false,99,100),"Retry timing");
         Check(!UNMissionPolicy.CanDispatchSilver(1500,true,int.MaxValue,0)&&!UNMissionPolicy.CanDispatchSilver(0,false,100,0),"Never replay uncertain or paid");
+        Check(UNMissionPolicy.SupplementBaseAmount(0)==30&&UNMissionPolicy.SupplementBaseAmount(1)==90,"Original follow-up base");
+        Check(UNMissionPolicy.ParcelLedgerState(1500,0,1500)==0&&UNMissionPolicy.ParcelLedgerState(1500,500,1000)==0,"Exact remaining payment");
+        Check(UNMissionPolicy.ParcelLedgerState(1500,1500,1500)==1,"Stale parcel cannot replay paid balance");
+        Check(UNMissionPolicy.ParcelLedgerState(1500,500,1500)==2&&UNMissionPolicy.ParcelLedgerState(0,1,100)==2,"Inconsistent ledger held");
+        Check(UNMissionPolicy.ParcelLedgerState(0,0,1500)==0,"Legacy unknown total remains payable");
+        foreach(int days in new[]{3,15,20,25,30,40})
+        {
+            int deadline=days*60000;
+            Check(UNMissionPolicy.RemainingTicks(deadline,deadline-1)==1&&UNMissionPolicy.RemainingTicks(deadline,deadline)==0&&
+                UNMissionPolicy.RemainingTicks(deadline,deadline+1)==0,"Mission deadline boundary "+days);
+        }
         // Only active site reservations, home maps, protected units and native safety block removal.
         for(int mask=0;mask<16;mask++)
             Check(UNMissionPolicy.CanCloseSite((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0)==(mask==0),"Cleanup blockers "+mask);

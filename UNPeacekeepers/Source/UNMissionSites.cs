@@ -100,7 +100,9 @@ namespace UNPeacekeepers
             if(!TrySupplementTile(main.homeMap,tier,out PlanetTile tile))return false;
             // Reserve a different tile; the actual camp is only created on acceptance.
             var o=new UNMissionObjective{kind=0,tier=tier,homeMap=main.homeMap,supportedFaction=main.supportedFaction,tile=tile,difficulty=main.difficulty,seed=Rand.Int,supplement=true,durationTicks=(tier==0?20:30)*60000};
-            o.goods.Add(DefDatabase<ThingDef>.GetNamed("MedicineIndustrial"));o.required.Add(Math.Max(1,Mathf.RoundToInt((tier==0?30:90)*main.difficulty)));o.delivered.Add(0);
+            o.goods.Add(DefDatabase<ThingDef>.GetNamed("MedicineIndustrial"));
+            o.baseRequired.Add(UNMissionPolicy.SupplementBaseAmount(tier));
+            o.required.Add(Math.Max(1,Mathf.RoundToInt(o.baseRequired[0]*main.difficulty)));o.delivered.Add(0);
             extra=o;return true;
         }
         static bool TrySupplementTile(Map home,int tier,out PlanetTile tile)
@@ -128,7 +130,7 @@ namespace UNPeacekeepers
             if(a==null||b==null||a.Map==null||a.Map!=b.Map)return null;
             foreach(var o in Active.Where(o=>o.destination?.Map==a.Map))
             {
-                bool ae=a is Pawn ap&&o.enemies.Contains(ap),be=b is Pawn bp&&o.enemies.Contains(bp);
+                bool ae=a is Pawn ap&&!ap.IsPrisonerOfColony&&o.enemies.Contains(ap),be=b is Pawn bp&&!bp.IsPrisonerOfColony&&o.enemies.Contains(bp);
                 bool aa=a.Faction==Faction.OfPlayer||(a is Pawn pa&&o.allies.Contains(pa));
                 bool ba=b.Faction==Faction.OfPlayer||(b is Pawn pb&&o.allies.Contains(pb));
                 if((ae&&ba)||(be&&aa))return true;
@@ -573,12 +575,18 @@ namespace UNPeacekeepers
         {
             if(started)return false;
             if(baseRequired==null)baseRequired=new List<int>();
-            if(baseRequired.Count!=required.Count)baseRequired=required.Select(n=>Math.Max(1,Mathf.RoundToInt(n/difficulty))).ToList();
-            bool changed=Math.Abs(difficulty-newDifficulty)>0.001f;
-            if(enemyBudget>0)enemyBudget=enemyBudget/difficulty*newDifficulty;
+            if(baseRequired.Count!=required.Count)
+            {
+                // Older follow-ups had no saved base quantity; their known contract is 30/90.
+                if(supplement&&goods.Count==1&&goods[0]==ThingDefOf.MedicineIndustrial&&required.Count==1)
+                    baseRequired=new List<int>{UNMissionPolicy.SupplementBaseAmount(tier)};
+                else baseRequired=required.Select(n=>Math.Max(1,Mathf.RoundToInt(n/Math.Max(0.25f,difficulty)))).ToList();
+            }
+            if(Math.Abs(difficulty-newDifficulty)<=0.001f)return false;
+            if(enemyBudget>0)enemyBudget=enemyBudget/Math.Max(0.25f,difficulty)*newDifficulty;
             difficulty=newDifficulty;
             for(int i=0;i<required.Count;i++)required[i]=Math.Max(1,Mathf.RoundToInt(baseRequired[i]*difficulty));
-            return changed;
+            return true;
         }
         public bool ValidateAcceptance(out string reason)
         {
@@ -634,7 +642,7 @@ namespace UNPeacekeepers
                 // Older saves have no guest collections; defaults are safe. Core missing collections are not proof.
                 savedCollectionsMissing|=(kind==0&&(goods==null||required==null||delivered==null))||
                     (kind!=0&&(generated||kind==6)&&targets==null)||
-                    (generated&&(kind==4||kind==5)&&(enemies==null||protectedThings==null));
+                    (generated&&((kind==3&&enemies==null)||((kind==4||kind==5)&&(enemies==null||protectedThings==null))));
                 if(goods==null)goods=new List<ThingDef>();
                 if(required==null)required=new List<int>();
                 if(delivered==null)delivered=new List<int>();
@@ -845,11 +853,10 @@ namespace UNPeacekeepers
         {
             base.Notify_QuestSignalReceived(signal);
             var passengers=guestPickupActive?guestPickup:targets;
-            if(!finished&&signal.tag==SignalTag+".SentSatisfied"&&shuttle!=null&&passengers.Count>0&&
-                RemainingTicks>0&&!guestPickupAborting&&
-                passengers.All(p=>p!=null&&!p.Dead&&(!guestPickupActive||ReadyToLeave(p,Find.TickManager.TicksGame))&&
-                    (kind!=6||EliteEligible(p))&&OnPickupShuttle(p)))
-                shuttleSatisfied=true;
+            if(!finished&&signal.tag==SignalTag+".SentSatisfied"&&shuttle!=null)
+                shuttleSatisfied=passengers.Count>0&&RemainingTicks>0&&!guestPickupAborting&&
+                    passengers.All(p=>p!=null&&!p.Dead&&(!guestPickupActive||ReadyToLeave(p,Find.TickManager.TicksGame))&&
+                        (kind!=6||EliteEligible(p))&&OnPickupShuttle(p));
         }
         // Snapshot actual passengers before the native launch moves the container.
         public void PrepareGuestLaunch(TransportShip departing)
@@ -860,12 +867,14 @@ namespace UNPeacekeepers
                 directLaunchBeforeDeadline=RemainingTicks>0;
                 directLaunchBoarded=targets.Count==patientCount&&patientCount>0&&targets.All(OnPickupShuttle);
                 directLaunchEligible=targets.All(p=>p!=null&&!p.Dead&&(kind!=6||EliteEligible(p)));
+                if(!directLaunchBeforeDeadline||!directLaunchBoarded||!directLaunchEligible)shuttleSatisfied=false;
                 return;
             }
             guestLaunchBeforeDeadline=RemainingTicks>0;
             guestLaunchAnyBoarded=guestPickup.Any(OnPickupShuttle);
             guestLaunchAllBoarded=guestPickup.Count>0&&guestPickup.All(OnPickupShuttle);
             guestLaunchAllEligible=guestPickup.Count>0&&guestPickup.All(p=>p!=null&&!p.Dead&&ReadyToLeave(p,Find.TickManager.TicksGame));
+            if(!guestLaunchBeforeDeadline||!guestLaunchAllBoarded||!guestLaunchAllEligible||guestPickupAborting)shuttleSatisfied=false;
         }
         public void NotifyDeparted(TransportShip departed)
         {

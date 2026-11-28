@@ -13,6 +13,11 @@ namespace UNPeacekeepers
         public static int DisplayMinutes(int ticks)
             =>(int)(((long)Math.Max(0,ticks)*1440+59999)/60000);
         public static bool HasOfferDeadline(int tick)=>tick>0&&tick<int.MaxValue;
+        public static int SupplementBaseAmount(int tier)=>tier==0?30:90;
+        // 0=valid/unrecorded total, 1=already fully dispatched, 2=inconsistent.
+        public static int ParcelLedgerState(int total,int dispatched,int pending)
+            =>total<0||dispatched<0||pending<=0||dispatched>total?2:total==0?0:
+              dispatched==total?1:(long)dispatched+pending==total?0:2;
         public static bool OfferExpired(int deadline,int now)=>HasOfferDeadline(deadline)&&now>=deadline;
         public static int SupplyRemaining(int required,int delivered)=>Math.Max(0,required-Math.Max(0,delivered));
         public static int SupplyTake(int required,int delivered,int available)=>Math.Min(SupplyRemaining(required,delivered),Math.Max(0,available));

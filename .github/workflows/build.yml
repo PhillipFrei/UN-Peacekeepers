@@ -10,11 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
       - name: Validate definitions and translations
         run: python3 tools/verify_content.py
+      - name: Verify release regression against v0.3.5
+        run: python3 tools/verify_regression.py
       - name: Test goodwill, mission, pollution and reward boundaries
         run: dotnet run --project tests/RulesTests.csproj -c Release
       - name: Compile RimWorld 1.6 DLL
@@ -23,8 +27,8 @@ jobs:
         run: python3 tools/package.py
       - uses: actions/upload-artifact@v4
         with:
-          name: UN-Peacekeepers-v0.3.6-alpha-package5-CI-base
+          name: UN-Peacekeepers-v0.3.6-alpha-CI-base
           path: |
-            UN_Peacekeepers_v0.3.6-alpha-package5-CI-base.zip
-            UN_Peacekeepers_v0.3.6-alpha-package5-CI-base.zip.sha256
+            UN_Peacekeepers_v0.3.6-alpha-CI-base.zip
+            UN_Peacekeepers_v0.3.6-alpha-CI-base.zip.sha256
           if-no-files-found: error

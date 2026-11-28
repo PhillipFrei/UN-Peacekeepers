@@ -301,6 +301,9 @@ namespace UNPeacekeepers
                 if(!r.optional&&r.slot>=0&&r.slot<10)
                     slots[r.slot].refillAt=UNMissionPolicy.RestoredRefillAt(slots[r.slot].refillAt,q.acceptanceTick);
             }
+            // A corrupted save may contain duplicate keyed parcels. Neither is safe to replay.
+            foreach(var group in parcels.Where(p=>p.questId>=0&&p.amount>0).GroupBy(p=>p.questId).Where(g=>g.Count()>1))
+                foreach(var parcel in group)parcel.uncertain=true;
             supplementOffers=supplementOffers.Where(q=>q!=null&&q.State==QuestState.NotYetAccepted&&IsManaged(q)).Distinct().ToList();
             foreach(var q in quests.Where(q=>q.State==QuestState.NotYetAccepted).OrderBy(q=>q.id))
             {
@@ -516,6 +519,10 @@ namespace UNPeacekeepers
         }
         void DeliverParcel(UNSilverParcel parcel)
         {
+            var reward=parcel.questId<0?null:Find.QuestManager.QuestsListForReading.FirstOrDefault(q=>q.id==parcel.questId)?.GetFirstPartOfType<UNMissionReward>();
+            int ledger=reward==null?0:UNMissionPolicy.ParcelLedgerState(reward.paymentTotal,reward.paymentDispatched,parcel.amount);
+            if(ledger==1){parcels.Remove(parcel);return;} // a recorded paid balance cannot be dispatched again
+            if(ledger==2){parcel.uncertain=true;return;} // inconsistent ledger: do not infer a new payment
             var map=parcel.home!=null&&Find.Maps.Contains(parcel.home)&&parcel.home.IsPlayerHome?parcel.home:UNContact.RaidTarget();
             if(map==null||!map.IsPlayerHome){parcel.blockReason=1;return;}
             // Prefer a safe outdoor spot near the orbital trade beacon.
@@ -574,7 +581,6 @@ namespace UNPeacekeepers
             // Positive spawn evidence: commit debit before notification. No landing/collection
             // claim is made; normal in-game loss after dispatch does not trigger a replacement.
             parcel.amount=UNMissionPolicy.RemainingAfterDropDispatch(amount,true);
-            var reward=parcel.questId<0?null:Find.QuestManager.QuestsListForReading.FirstOrDefault(q=>q.id==parcel.questId)?.GetFirstPartOfType<UNMissionReward>();
             if(reward!=null)
             {
                 if(reward.paymentTotal<=0)reward.paymentTotal=parcel.total>0?parcel.total:amount;
@@ -619,7 +625,15 @@ namespace UNPeacekeepers
             static bool Prefix(Quest __instance,QuestEndOutcome __0,out EndContext __state)
             {
                 __state=null;
-                if(!IsManaged(__instance)||__instance.State!=QuestState.Ongoing)return true;
+                if(!IsManaged(__instance))return true;
+                if(__instance.State==QuestState.NotYetAccepted)
+                {
+                    var r=__instance.GetFirstPartOfType<UNMissionReward>();
+                    if(r?.optional==true&&r.offerClosedReason==0&&__0==QuestEndOutcome.InvalidPreAcceptance&&
+                        UNMissionPolicy.OfferExpired(__instance.acceptanceExpireTick,Find.TickManager.TicksGame))r.offerClosedReason=2;
+                    return true;
+                }
+                if(__instance.State!=QuestState.Ongoing)return true;
                 var objective=__instance.GetFirstPartOfType<UNMissionObjective>();
                 if(__0==QuestEndOutcome.Success&&objective?.CanRewardSuccess!=true)return false;
                 __state=new EndContext{reward=__instance.GetFirstPartOfType<UNMissionReward>(),objective=objective};

@@ -161,13 +161,15 @@ namespace UNPeacekeepers
         public override void Notify_QuestSignalReceived(Signal signal)
         {
             base.Notify_QuestSignalReceived(signal);
-            if(signal.tag==Tag+".SentSatisfied"&&!resolved&&Find.TickManager.TicksGame<deadline&&target!=null&&!target.Dead&&shuttle?.TransporterComp?.innerContainer.Contains(target)==true)satisfied=true;
+            if(signal.tag==Tag+".SentSatisfied"&&!resolved)
+                satisfied=Find.TickManager.TicksGame<deadline&&target!=null&&!target.Dead&&shuttle?.TransporterComp?.innerContainer.Contains(target)==true;
         }
         public void PrepareLaunch(TransportShip departing)
         {
             if(resolved||departing!=shuttle)return;
             launchBeforeDeadline=Find.TickManager.TicksGame<deadline;
             launchBoarded=target!=null&&!target.Dead&&shuttle?.TransporterComp?.innerContainer.Contains(target)==true;
+            if(!launchBeforeDeadline||!launchBoarded)satisfied=false;
         }
         public void NotifyDeparted(TransportShip departed)
         {
