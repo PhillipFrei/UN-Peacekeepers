@@ -115,11 +115,11 @@ class Program
         Check(UNMissionPolicy.ParcelLedgerState(1500,1500,1500)==1,"Stale parcel cannot replay paid balance");
         Check(UNMissionPolicy.ParcelLedgerState(1500,500,1500)==2&&UNMissionPolicy.ParcelLedgerState(0,1,100)==2,"Inconsistent ledger held");
         Check(UNMissionPolicy.ParcelLedgerState(0,0,1500)==0,"Legacy unknown total remains payable");
-        foreach(int days in new[]{3,15,20,25,30,40})
+        foreach(int missionDays in new[]{3,15,20,25,30,40})
         {
-            int deadline=days*60000;
+            int deadline=missionDays*60000;
             Check(UNMissionPolicy.RemainingTicks(deadline,deadline-1)==1&&UNMissionPolicy.RemainingTicks(deadline,deadline)==0&&
-                UNMissionPolicy.RemainingTicks(deadline,deadline+1)==0,"Mission deadline boundary "+days);
+                UNMissionPolicy.RemainingTicks(deadline,deadline+1)==0,"Mission deadline boundary "+missionDays);
         }
         // Only active site reservations, home maps, protected units and native safety block removal.
         for(int mask=0;mask<16;mask++)
