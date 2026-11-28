@@ -276,12 +276,21 @@ namespace UNPeacekeepers
                             }
                             restoredThisLoad.Add(q.id);
                         }
-                        if(q.State==QuestState.Ongoing&&o!=null)
+                        if(q.State==QuestState.Ongoing)
                         {
-                            ReportLegacyPayment(q,r,o);
-                            if(!o.CompletionRequested)o.PollMission();
-                            if(o.CompletionRequested)
-                                q.End(o.CanRewardSuccess?QuestEndOutcome.Success:QuestEndOutcome.Fail);
+                            if(o==null)
+                            {
+                                if(r.technicalRepair)q.End(QuestEndOutcome.Fail);
+                            }
+                            else
+                            {
+                                if(!o.CompletionRequested)o.PollMission();
+                                if(o.CompletionRequested)
+                                {
+                                    ReportLegacyPayment(q,r,o);
+                                    q.End(o.CanRewardSuccess?QuestEndOutcome.Success:QuestEndOutcome.Fail);
+                                }
+                            }
                         }
                     }
                     if(q.State==QuestState.EndedSuccess||q.State==QuestState.EndedFailed)
@@ -298,7 +307,6 @@ namespace UNPeacekeepers
         void Settle(Quest q,UNMissionReward r,UNMissionObjective objective)
         {
             bool success=q.State==QuestState.EndedSuccess;
-            if(success)ReportLegacyPayment(q,r,objective);
             if(r==null||!UNMissionPolicy.CanSettle(q.EverAccepted,r.settled,success,q.State==QuestState.EndedFailed,objective?.CanRewardSuccess==true))return;
             var un=Authorization.GetUN();
             bool unAvailable=un!=null&&!un.defeated&&!un.deactivated;

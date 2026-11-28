@@ -454,7 +454,8 @@ namespace UNPeacekeepers
             if(Scribe.mode==LoadSaveMode.PostLoadInit)
             {
                 // Older saves have no guest collections; defaults are safe. Core missing collections are not proof.
-                savedCollectionsMissing|=goods==null||required==null||delivered==null||targets==null||
+                savedCollectionsMissing|=(kind==0&&(goods==null||required==null||delivered==null))||
+                    (kind!=0&&(generated||kind==6)&&targets==null)||
                     (generated&&(kind==4||kind==5)&&(enemies==null||protectedThings==null));
                 if(goods==null)goods=new List<ThingDef>();
                 if(required==null)required=new List<int>();

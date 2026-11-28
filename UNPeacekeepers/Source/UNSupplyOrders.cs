@@ -88,12 +88,16 @@ namespace UNPeacekeepers
         public override void QuestPartTick()
         {
             base.QuestPartTick();
-            // Completion is handled by the manager outside quest iteration.
-            if(quest.State==QuestState.Ongoing && progress.Delivered<Required && UNSupplyProgress.Expired(quest.TicksSinceAccepted))quest.End(QuestEndOutcome.Fail);
+            // Completion and expiry are handled by the manager outside quest iteration.
         }
         public void RepairCompletion()
         {
-            if(quest.State!=QuestState.Ongoing||progress.Delivered<Required)return;
+            if(quest.State!=QuestState.Ongoing)return;
+            if(progress.Delivered<Required)
+            {
+                if(UNSupplyProgress.Expired(quest.TicksSinceAccepted))quest.End(QuestEndOutcome.Fail);
+                return;
+            }
             if(!progress.Rewarded)
             {
                 var un=Authorization.GetUN();
