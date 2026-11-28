@@ -51,6 +51,8 @@ namespace UNPeacekeepers
                 }
             }
             o.patientCount=kind==6?1:kind==3?Rand.RangeInclusive(4,12):tier==0?Rand.RangeInclusive(3,6):Rand.RangeInclusive(8,kind==2?20:15);
+            // Persist the single-patient scenario with the offer, not a reroll on visit.
+            if(kind==1 && Rand.Value<0.15f){o.bionicCase=true;o.patientCount=1;}
             o.durationTicks=(kind==0?(tier==0?20:30):kind==1?(tier==0?20:40):kind==2?(tier==0?15:30):kind==3?25:kind==6?40:30)*60000;
             o.defenceTicks=Rand.RangeInclusive(1,3)*60000;
             objective=o;reason=null;return true;
@@ -143,7 +145,7 @@ namespace UNPeacekeepers
             foreach(var o in UNMissionSites.Active.Where(o=>o.destination==this).ToList())
             {
                 var current=o;
-                if(HasMap)yield return new Command_Action{defaultLabel="UNMS_Review".Translate(),defaultDesc=current.OfferDescription,icon=TexButton.Info,action=()=>current.Review(Map)};
+                if(HasMap && (o.kind==0||o.kind==2||o.kind==3))yield return new Command_Action{defaultLabel=(o.kind==0?"UNMS_Deliver":"UNMS_TakeCustody").Translate(),defaultDesc=current.OfferDescription,icon=TexButton.Info,action=()=>current.Review(Map)};
             }
             if(!UNMissionSites.Pending.Any(o=>o.destination==this))
             {
@@ -165,7 +167,9 @@ namespace UNPeacekeepers
         public List<int> required=new List<int>(),delivered=new List<int>(),baseRequired=new List<int>();
         public List<Pawn> targets=new List<Pawn>(),enemies=new List<Pawn>(),allies=new List<Pawn>();
         public List<Thing> protectedThings=new List<Thing>(),ownedStructures=new List<Thing>();
-        public bool supplement;
+        public bool supplement,bionicCase;
+        private int requiredLimbIndex=-1;
+        private string requiredBionic;
         private bool achieved;
         public bool CanRewardSuccess=>achieved;
         private QuestPart_ExtraFaction custody;
@@ -174,10 +178,11 @@ namespace UNPeacekeepers
         private TransportShip shuttle;
         public int DurationTicks=>durationTicks;
         public string OfferDescription=>"UNMS_Kind".Translate()+": "+("UNMS_Kind"+kind).Translate()+"\n"+"UNMS_Destination".Translate(destination?.Label??"UNMS_Camp".Translate().ToString(),tile.ToString())+"\n"+"UNMS_Faction".Translate(supportedFaction?.Name??"—")+"\n"+
-            (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+"\n"+"UNMS_Time".Translate(durationTicks/60000)+
+            (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_People".Translate(patientCount).ToString())+"\n"+("UNMS_Goal"+kind).Translate()+(kind==1&&bionicCase?"\n"+"UNMS_BionicGoal".Translate().ToString():"")+"\n"+"UNMS_Time".Translate(durationTicks/60000)+
             (enemyFaction!=null?"\n"+"UNMS_Enemy".Translate(enemyFaction.Name,enemyBudget.ToString("0")):"\n"+"UNMS_Peaceful".Translate());
         public override string DescriptionPart=>started?("UNMS_Remaining".Translate(Math.Max(0,durationTicks-quest.TicksSinceAccepted)/60000f)+"\n"+
-            (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_NameTargets".Translate(string.Join(", ",targets.Where(p=>p!=null).Select(p=>p.LabelShortCap.ToString()))).ToString())):null;
+            (kind==0?string.Join("\n",goods.Select((g,i)=>g.LabelCap+": "+delivered[i]+"/"+required[i])):"UNMS_NameTargets".Translate(string.Join(", ",targets.Where(p=>p!=null).Select(p=>p.LabelShortCap.ToString()))).ToString()+
+            (kind==1&&generated?"\n"+MedicalProgress():""))):null;
         public override IEnumerable<GlobalTargetInfo> QuestLookTargets {get{if(destination!=null)yield return new GlobalTargetInfo(destination);foreach(var p in targets)if(p!=null)yield return new GlobalTargetInfo(p);}}
         public override IEnumerable<Faction> InvolvedFactions{get{if(supportedFaction!=null)yield return supportedFaction;if(enemyFaction!=null)yield return enemyFaction;}}
         public override bool QuestPartReserves(Pawn pawn)=>targets.Contains(pawn);
@@ -229,6 +234,7 @@ namespace UNPeacekeepers
             Scribe_References.Look(ref supportedFaction,"unSupported");Scribe_References.Look(ref enemyFaction,"unEnemy");Scribe_References.Look(ref homeMap,"unHome");Scribe_References.Look(ref destination,"unDestination");
             Scribe_Collections.Look(ref goods,"unGoods",LookMode.Def);Scribe_Collections.Look(ref required,"unRequired",LookMode.Value);Scribe_Collections.Look(ref delivered,"unDelivered",LookMode.Value);Scribe_Collections.Look(ref baseRequired,"unBaseRequired",LookMode.Value);
             Scribe_Collections.Look(ref targets,"unTargets",LookMode.Reference);Scribe_Collections.Look(ref enemies,"unEnemies",LookMode.Reference);Scribe_Collections.Look(ref allies,"unAllies",LookMode.Reference);Scribe_Collections.Look(ref protectedThings,"unProtectedThings",LookMode.Reference);Scribe_Collections.Look(ref ownedStructures,"unOwnedStructures",LookMode.Reference);Scribe_Values.Look(ref supplement,"unSupplement");Scribe_Values.Look(ref achieved,"unAchieved");
+            Scribe_Values.Look(ref bionicCase,"unBionicCase",false);Scribe_Values.Look(ref requiredLimbIndex,"unRequiredLimbIndex",-1);Scribe_Values.Look(ref requiredBionic,"unRequiredBionic");
             Scribe_Values.Look(ref started,"unStarted");Scribe_Values.Look(ref generated,"unGenerated");Scribe_Values.Look(ref finished,"unFinished");Scribe_Values.Look(ref shuttleSent,"unShuttleSent");Scribe_Values.Look(ref shuttleSatisfied,"unShuttleSatisfied");Scribe_Values.Look(ref began,"unBegan",-1);Scribe_References.Look(ref shuttle,"unShuttle");
         }
         public override void QuestPartTick()
@@ -244,7 +250,13 @@ namespace UNPeacekeepers
                 if(protectedThings.Any(t=>t==null||t.Destroyed)){Finish(false);return;}
                 if(Find.TickManager.TicksGame>=began+defenceTicks&&targets.All(p=>p.Spawned&&p.Map==destination.Map)&&enemies.All(p=>p!=null&&(p.Dead||p.Downed))){Finish(true);return;}
             }
-            if(generated&&(kind==2||kind==3||kind==6)&&shuttle==null&&homeMap!=null&&Find.Maps.Contains(homeMap)&&targets.All(p=>p.Spawned&&p.Map==homeMap&&p.health.hediffSet.BleedRateTotal<=0f)&&(kind!=6||targets.All(p=>p.IsPrisonerOfColony)))
+            if(generated&&kind==1&&targets.Count==patientCount&&targets.All(MedicallyRecovered)&&shuttle==null)
+            {
+                if(homeMap!=null&&Find.Maps.Contains(homeMap)&&targets.All(p=>p.Spawned&&p.Map==homeMap))
+                    UNMissionSites.TryPickup(homeMap,targets,SignalTag,out shuttle);
+                else if(targets.All(p=>p.Spawned&&p.Map==destination.Map)) {Finish(true);return;}
+            }
+            if(generated&&(kind==2||kind==3||kind==6)&&targets.Count==patientCount&&shuttle==null&&homeMap!=null&&Find.Maps.Contains(homeMap)&&targets.All(p=>p.Spawned&&p.Map==homeMap&&p.health.hediffSet.BleedRateTotal<=0f&&!p.health.hediffSet.HasHediff(HediffDefOf.Anesthetic))&&(kind!=6||targets.All(p=>p.IsPrisonerOfColony)))
                 UNMissionSites.TryPickup(homeMap,targets,SignalTag,out shuttle);
             if(shuttle!=null&&shuttle.shipThing.Destroyed&&!shuttleSent)Finish(false);
         }
@@ -297,23 +309,85 @@ namespace UNPeacekeepers
                 var list=map.listerThings.AllThings.Where(t=>t.Spawned&&goods.Contains(t.def)&&!t.IsForbidden(colonist)&&t.Position.DistanceTo(marker.Position)<=8f&&colonist.CanReach(t,PathEndMode.Touch,Danger.Some)).ToList();
                 list.AddRange(map.mapPawns.FreeColonistsSpawned.Where(p=>p.inventory!=null&&p.Position.DistanceTo(marker.Position)<=8f).SelectMany(p=>p.inventory.innerContainer));Deliver(list);
             }
-            else if(kind==1)
-            {
-                if(targets.All(p=>p!=null&&!p.Dead&&p.Spawned&&p.Map==map&&!p.health.hediffSet.hediffs.Any(h=>h is Hediff_Injury&&!h.IsPermanent())) && HospitalReady(map))Finish(true);
-                else Messages.Message("UNMS_TreatmentIncomplete".Translate(),MessageTypeDefOf.RejectInput,false);
-            }
             else if(kind==2||kind==3)
             {
+                if(kind==3&&enemies.Any(p=>p!=null&&!p.Dead&&!p.Downed&&p.Spawned&&p.Map==map))
+                {Messages.Message("UNMS_EnemiesRemain".Translate(),MessageTypeDefOf.RejectInput,false);return;}
                 // Consent/release applies to these exact mission people, making them controllable for travel.
                 foreach(var p in targets.Where(p=>p!=null&&!p.Dead&&p.Map==map&&p.Position.DistanceTo(marker.Position)<=8f)){p.GetLord()?.Notify_PawnLost(p,PawnLostCondition.LeftVoluntarily);p.guest?.SetGuestStatus(null);p.SetFaction(Faction.OfPlayer);}
                 Messages.Message("UNMS_ReturnHome".Translate(),MessageTypeDefOf.NeutralEvent,false);
             }
             else Messages.Message(DescriptionPart,MessageTypeDefOf.NeutralEvent,false);
         }
-        bool HospitalReady(Map map)
+        // Only actual medical state, not buildings, temperature or a completion gizmo.
+        bool MedicallyRecovered(Pawn p)
         {
-            int needed=tier==0?Math.Min(3,patientCount):6;
-            return map.listerBuildings.allBuildingsColonist.OfType<Building_Bed>().Count(b=>b.Medical&&b.Position.Roofed(map)&&b.Position.GetTemperature(map)>=16f&&b.Position.GetTemperature(map)<=30f)>=needed;
+            if(p==null||p.Dead||p.health==null||p.health.hediffSet.BleedRateTotal>0f)return false;
+            if(p.health.hediffSet.hediffs.Any(h=>h.def==HediffDefOf.Anesthetic ||
+                (h is Hediff_Injury&&!h.IsPermanent()) ||
+                (h.def.isBad&&!h.IsPermanent()&&h.TryGetComp<HediffComp_Immunizable>()!=null)))return false;
+            if(bionicCase && requiredLimbIndex>=0)
+            {
+                var part=p.RaceProps.body.AllParts.FirstOrDefault(x=>x.Index==requiredLimbIndex);
+                if(part==null||p.health.hediffSet.PartIsMissing(part)||
+                    !p.health.hediffSet.hediffs.Any(h=>h.Part==part&&h is Hediff_AddedPart&&h.def.defName==requiredBionic))return false;
+            }
+            return true;
+        }
+        string MedicalProgress()
+        {
+            var lines=new List<string>{"UNMS_Recovered".Translate(targets.Count(MedicallyRecovered),patientCount).ToString()};
+            foreach(var p in targets.Where(p=>p!=null))
+                lines.Add(p.LabelShortCap+": "+(MedicallyRecovered(p)?"UNMS_Well":p.health.hediffSet.HasHediff(HediffDefOf.Anesthetic)?"UNMS_Anesthetized":"UNMS_Unwell").Translate());
+            if(bionicCase && requiredLimbIndex>=0)
+            {
+                var limb=targets.FirstOrDefault()?.RaceProps.body.AllParts.FirstOrDefault(x=>x.Index==requiredLimbIndex);
+                if(limb!=null)lines.Add("UNMS_BionicRequired".Translate(limb.Label,DefDatabase<ThingDef>.GetNamedSilentFail(requiredBionic)?.LabelCap.ToString()??requiredBionic));
+            }
+            if(shuttle!=null)lines.Add("UNMS_ShuttleWaiting".Translate());
+            return string.Join("\n",lines);
+        }
+        void AddInjury(Pawn p,BodyPartRecord part,float severity)
+        {
+            if(p.Dead||part==null||p.health.hediffSet.PartIsMissing(part))return;
+            // Keep a margin against destroying a limb or the torso during generation.
+            float safe=Math.Min(severity,p.health.hediffSet.GetPartHealth(part)*0.45f);
+            if(safe<1f)return;
+            var injury=HediffMaker.MakeHediff(HediffDefOf.Cut,p,part);
+            injury.Severity=safe;p.health.AddHediff(injury);
+        }
+        void GenerateInjuries(Pawn p)
+        {
+            // Different severities for each person. Advanced missions and camps lean more severe.
+            var limbs=p.RaceProps.body.AllParts.Where(x=>(x.def.defName=="Shoulder"||x.def.defName=="Leg")&&!p.health.hediffSet.PartIsMissing(x)).ToList();
+            float roll=Rand.Value;
+            if(roll<(tier==0?0.25f:0.40f))
+            {
+                AddInjury(p,p.RaceProps.body.corePart,Rand.Range(12f,19f));
+                if(limbs.Count>0)AddInjury(p,limbs.RandomElement(),Rand.Range(5f,9f));
+            }
+            else if(roll<0.75f)
+            {
+                foreach(var limb in limbs.InRandomOrder().Take(Rand.RangeInclusive(2,4)))AddInjury(p,limb,Rand.Range(3f,7f));
+                AddInjury(p,p.RaceProps.body.corePart,Rand.Range(3f,6f));
+            }
+            else AddInjury(p,p.RaceProps.body.corePart,Rand.Range(4f,8f));
+        }
+        bool GenerateBionicCase(Pawn p,Map map,IntVec3 center)
+        {
+            var candidates=p.RaceProps.body.AllParts.Where(x=>(x.def.defName=="Shoulder"||x.def.defName=="Leg")&&
+                !p.health.hediffSet.PartIsMissing(x)&&!p.health.hediffSet.hediffs.Any(h=>h.Part==x&&h is Hediff_AddedPart)).ToList();
+            if(candidates.Count==0)return false;
+            var part=candidates.RandomElement();
+            string name=part.def.defName=="Shoulder"?"BionicArm":"BionicLeg";
+            var item=DefDatabase<ThingDef>.GetNamedSilentFail(name);
+            if(item==null||DefDatabase<HediffDef>.GetNamedSilentFail(name)==null)return false;
+            requiredLimbIndex=part.Index;requiredBionic=name;
+            p.health.AddHediff(HediffDefOf.MissingBodyPart,part);
+            GenPlace.TryPlaceThing(ThingMaker.MakeThing(item),center,map,ThingPlaceMode.Near);
+            var medicine=ThingMaker.MakeThing(ThingDefOf.MedicineIndustrial);medicine.stackCount=6;
+            GenPlace.TryPlaceThing(medicine,center,map,ThingPlaceMode.Near);
+            return true;
         }
         public void Generate(Map map)
         {
@@ -331,11 +405,14 @@ namespace UNPeacekeepers
                         var p=PawnGenerator.GeneratePawn(PawnKindDefOf.SpaceRefugee,supportedFaction);targets.Add(p);
                         GenSpawn.Spawn(p,CellFinder.RandomClosewalkCellNear(center,map,7),map);
                         if(kind==3)p.guest.SetGuestStatus(enemyFaction,GuestStatus.Prisoner);
-                        if(kind==1){var injury=HediffMaker.MakeHediff(HediffDefOf.Cut,p,p.RaceProps.body.corePart);injury.Severity=tier==0?5f:10f;p.health.AddHediff(injury);}
+                        if(kind==1&&bionicCase)
+                        {if(!GenerateBionicCase(p,map,center)){bionicCase=false;GenerateInjuries(p);}}
+                        else if(kind==1||kind==3)GenerateInjuries(p);
                     }
                     if(kind==1)
                     {
                         foreach(var p in targets){p.SetFaction(Faction.OfPlayer);}
+                        // Optional convenience ward; never evaluated as a quest requirement.
                         CreateHospital(map,center,tier==0?6:12);
                     }
                     else LordMaker.MakeNewLord(supportedFaction,new LordJob_DefendPoint(center,6f,10f,true),map,targets);
@@ -412,8 +489,8 @@ namespace UNPeacekeepers
         public override IEnumerable<Gizmo> CompGetGizmosExtra()
         {
             if(!(parent.Map?.Parent is UNMissionSite site))yield break;
-            foreach(var o in UNMissionSites.Active.Where(o=>o.destination==site).ToList())
-            {var current=o;yield return new Command_Action{defaultLabel="UNMS_Review".Translate(),defaultDesc=current.OfferDescription,icon=TexButton.Info,action=()=>current.Review(parent.Map)};}
+            foreach(var o in UNMissionSites.Active.Where(o=>o.destination==site&&(o.kind==0||o.kind==2||o.kind==3)).ToList())
+            {var current=o;yield return new Command_Action{defaultLabel=(o.kind==0?"UNMS_Deliver":"UNMS_TakeCustody").Translate(),defaultDesc=current.OfferDescription,icon=TexButton.Info,action=()=>current.Review(parent.Map)};}
         }
     }
 }

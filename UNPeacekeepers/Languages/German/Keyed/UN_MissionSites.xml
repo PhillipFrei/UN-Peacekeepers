@@ -14,7 +14,7 @@
   <UNMS_Peaceful>Kein Kampf vorgesehen.</UNMS_Peaceful>
   <UNMS_Remaining>Verbleibende Zeit: {0:0.1} Tage.</UNMS_Remaining>
   <UNMS_Partial>Teillieferung gespeichert. Erst alle geforderten Güter ergeben die volle Belohnung.</UNMS_Partial>
-  <UNMS_TreatmentIncomplete>Alle zugewiesenen Patienten müssen von ihren akuten Verletzungen genesen; die benötigten überdachten Krankenbetten müssen bei 16–30 °C nutzbar sein.</UNMS_TreatmentIncomplete>
+  <UNMS_TreatmentIncomplete>Die Patienten sind noch nicht vollständig genesen.</UNMS_TreatmentIncomplete>
   <UNMS_EnemiesRemain>Die Lagerwachen müssen besiegt oder kampfunfähig sein, bevor die zugewiesenen Gefangenen befreit werden.</UNMS_EnemiesRemain>
   <UNMS_ReturnHome>Diese Personen stehen jetzt vorübergehend unter Spielerkontrolle. Bringe sie alle zur Heimatkarte; ein UN-Shuttle holt sie ab, sobald Blutungen gestillt sind.</UNMS_ReturnHome>
   <UNMS_Stale>Der Zielort oder die genaue Zielperson ist nicht mehr verfügbar. Dieses Angebot kann nicht angenommen werden.</UNMS_Stale>
@@ -23,7 +23,7 @@
   <UNMS_MoveMarker>Bringe einen einsatzfähigen Kolonisten bis auf 8 Felder an den Übergabepunkt.</UNMS_MoveMarker>
   <UNMS_Started>Dieser Einsatz läuft bereits.</UNMS_Started>
   <UNMS_InvalidTarget>Die genaue Zielperson ist nicht verfügbar; es wurde kein Doppelgänger erstellt.</UNMS_InvalidTarget>
-  <UNMS_Hospital>Benötigte Krankenbetten: {0}; alle Patienten müssen von akuten Verletzungen genesen.</UNMS_Hospital>
+  <UNMS_Hospital>Medizinische Versorgung bis zur Genesung.</UNMS_Hospital>
   <UNMS_NameTargets>Zugewiesene Personen: {0}.</UNMS_NameTargets>
   <UNMS_Scope>Temporäre Einsatzorte und Lieferungen an bestehende Siedlungen werden unterstützt. Angriffe auf bestehende Basen/CBF und Fahrzeugmod-Integration benötigen eigene Kompatibilitätstests.</UNMS_Scope>
   <UNMS_Camp0>UN-Versorgungslager</UNMS_Camp0>
@@ -39,10 +39,18 @@
   <UNMS_Kind5>Militärische Intervention</UNMS_Kind5>
   <UNMS_Kind6>Elite-Festnahme</UNMS_Kind6>
   <UNMS_Goal0>Transportiere alle genannten Güter an diesen Zielort. Bei Siedlungen die Karawane auswählen und abgeben; im Lager Güter bis auf 8 Felder zum Übergabepunkt bringen und dort das Ziel prüfen. Mehrere Fahrten sind erlaubt.</UNMS_Goal0>
-  <UNMS_Goal1>Behandle alle zugewiesenen Patienten bis zur Genesung ihrer akuten, nicht dauerhaften Verletzungen. Stelle 3 (gewöhnlich) bzw. 6 (fortgeschritten) überdachte Krankenbetten bei 16–30 °C bereit; prüfe dann das Ziel am Übergabepunkt.</UNMS_Goal1>
+  <UNMS_Goal1>Heile alle Patienten von akuten Verletzungen und heilbaren Infektionen/Krankheiten. Keine Raum-, Temperatur- oder Bettvorgaben. Die Quest endet automatisch am Einsatzort; bei Heimtransport holt das UN-Shuttle die Genesenen ab.</UNMS_Goal1>
   <UNMS_Goal2>Übernimm am Übergabepunkt vorübergehend die Kontrolle über alle zugewiesenen Zivilisten. Transportiere sie körperlich zur angegebenen Heimatkarte, stille Blutungen und verlade alle in das UN-Abholshuttle.</UNMS_Goal2>
   <UNMS_Goal3>Befreie alle zugewiesenen Gefangenen, nachdem ihre Wachen besiegt oder kampfunfähig sind. Transportiere die genauen Personen lebend nach Hause, stabilisiere sie und übergib alle an das UN-Shuttle.</UNMS_Goal3>
   <UNMS_Goal4>Halte alle zugewiesenen Zivilisten und den markierten Übergabepunkt für die gesamte angegebene Schutzdauer am Leben; besiege oder entwaffne alle zugewiesenen Angreifer.</UNMS_Goal4>
   <UNMS_Goal5>Schütze alle zugewiesenen Zivilisten und den markierten Übergabepunkt über die gesamte Schutzdauer und schlage alle zugewiesenen Angreifer zurück. Unterstützte Fraktion und UN stellen lokale Verteidiger.</UNMS_Goal5>
   <UNMS_Goal6>Nimm den genau benannten lebenden Fraktionsanführer gefangen, halte ihn am Leben, transportiere ihn nach Hause, stille Blutungen und verlade ihn in das UN-Abholshuttle. Der Tod der Zielperson lässt den Auftrag scheitern.</UNMS_Goal6>
+  <UNMS_TakeCustody>Zielpersonen zur Evakuierung übernehmen</UNMS_TakeCustody>
+  <UNMS_BionicGoal>Sonderfall: ein Patient benötigt den am Einsatzort bereitgestellten bionischen Arm oder das bionische Bein. Führe die normale Operation durch und warte auf Genesung und Ende der Narkose.</UNMS_BionicGoal>
+  <UNMS_Recovered>Genesene Patienten: {0}/{1}</UNMS_Recovered>
+  <UNMS_Well>Genesen</UNMS_Well>
+  <UNMS_Unwell>Behandlung erforderlich</UNMS_Unwell>
+  <UNMS_Anesthetized>Narkose – auf Erwachen warten</UNMS_Anesthetized>
+  <UNMS_BionicRequired>Erforderlicher Ersatz: {0} – {1}</UNMS_BionicRequired>
+  <UNMS_ShuttleWaiting>UN-Abholshuttle: alle Patienten an Bord bringen.</UNMS_ShuttleWaiting>
 </LanguageData>

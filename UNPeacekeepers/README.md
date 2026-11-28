@@ -1,10 +1,10 @@
-# UN Peacekeepers 0.3.1 alpha
+# UN Peacekeepers 0.3.2 alpha
 
-Based on release/0.3.0-alpha (`45e8d5bf`) with only the two additional prisoner-crime categories and their rules/translations. This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
+Based on release/0.3.1-alpha (`9f856ca6`) with automatic medical objectives and varied patient injuries. This is an experimental playable build for testing, not a claim that every scenario in the development document is finished. Target: RimWorld 1.6.4871, Harmony and VEF; Royalty for shuttle missions, Biotech for pollution. Managed DLL suitable for RimWorld on Mac M3.
 
 ## Install
 
-Download the complete `UN_Peacekeepers_v0.3.1-alpha.zip` from GitHub Actions. Extract `UNPeacekeepers` into the game's Mods folder, replacing the previous mod folder. Keep a copy of the old mod and save. Load a COPY of your save for alpha testing. No game DLLs are shipped. Existing v0.2.9 supply orders retain their original handover and rewards; new orders use the new pool.
+Download the complete `UN_Peacekeepers_v0.3.2-alpha.zip` from GitHub Actions. Extract `UNPeacekeepers` into the game's Mods folder, replacing the previous mod folder. Keep a copy of the old mod and save. Load a COPY of your save for alpha testing. No game DLLs are shipped. Existing v0.2.9 supply orders retain their original handover and rewards; new orders use the new pool.
 
 ## Core implementation
 
@@ -19,7 +19,7 @@ Download the complete `UN_Peacekeepers_v0.3.1-alpha.zip` from GitHub Actions. Ex
 Accept through normal UN radio contact or the native quest log with an eligible colonist. Offers show recipient, requirements, destination tile, risk and reward. Temporary sites are created only on acceptance.
 
 1. Supply delivery: one ordinary or two/three advanced goods types. Carry real goods to the destination. At an existing friendly settlement, use the caravan handover command on its tile. At a temporary site, use the marked handover point, bringing colonists and goods within eight cells; a caravan can also hand over on the site's tile. Partial deliveries persist; only full delivery pays.
-2. Medical assistance: generated patients at a temporary site must all recover from nonpermanent acute injuries, with sufficient roofed medical beds in safe temperature. A basic ward is generated. Review at the handover point completes the objective. This initial variant uses injuries rather than the full disease catalogue.
+2. Medical assistance: all patients must recover from acute injuries and immunizable illness and be free of vanilla anesthesia. No room/bed/temperature condition or manual completion button. Optional basic ward remains. All recovered at the site completes automatically; if transported to the requesting home map, all recovered patients must depart in the pickup shuttle. 15% of medical offers are single-patient cases requiring a specific vanilla bionic arm/leg at the missing limb, with a matching item and medicine at the site. Ordinary/advanced and rescue patients have mixed small and heavier wounds. No custom anesthesia or surgery.
 3. Evacuation: contact the exact civilians at the handover point, transport them to the requesting home map, then load all alive into the UN shuttle. No 80% completion.
 4. Prisoner rescue: recover the exact people from a guarded camp and bring them home for the UN shuttle. Destroying the base is not an objective; reaching and rescuing the targets is sufficient.
 5. Protection: preserve all named people and the handover installation for the agreed duration and defeat/incapacitate the mission attackers. Initial implementation uses a single budgeted wave.
@@ -46,6 +46,6 @@ Prisoner experiments and proven fatal starvation are added in 0.3.1. Completed p
 
 Local compile and pure rule tests pass. CI additionally checks localization parity, definition references, XML, original asset hashes and complete ZIP integrity. Static tests are NOT engine integration tests. No real save load or full in-game mission has been run here. Test the three-way bridge between quest log, caravan/map objectives and shuttle carefully on a copied save.
 
-Still outside this first alpha: full scenario weights and complications, all four fully furnished UN base variants, the complete optional-combination matrix, multi-wave protection, existing-base/Custom Base Framework combat placement, medical home-treatment variants and dedicated vehicle-framework arrival support. Vanilla caravans and site visit paths are used; modded vehicles/transport need separate verification. Ordinary missions currently have no random combat complication. NPC conflicts use existing hostility rather than a diplomacy-mod war API. Forecasts are current-state previews, not guarantees.
+Still outside this first alpha: full scenario weights and complications, all four fully furnished UN base variants, the complete optional-combination matrix, multi-wave protection, existing-base/Custom Base Framework combat placement, additional medical variants and dedicated vehicle-framework arrival support. Vanilla caravans and site visit paths are used; modded vehicles/transport need separate verification. Ordinary missions currently have no random combat complication. NPC conflicts use existing hostility rather than a diplomacy-mod war API. Forecasts are current-state previews, not guarantees.
 
 Compatibility with direct field writes, mods replacing native combat/transport behavior, and the entire supplied mod list is not guaranteed. Do not downgrade/remove this version after saving its new quest/component classes. All 24 original textures/sounds and existing equipment definitions are unchanged; no assets were regenerated.
