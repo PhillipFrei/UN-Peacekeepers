@@ -18,7 +18,7 @@
   <UNMS_EnemiesRemain>Defeat or incapacitate the camp guards before releasing the assigned prisoners.</UNMS_EnemiesRemain>
   <UNMS_ReturnHome>These people are temporarily under player control. Bring them to the home map. Once stabilized, each stays as a guest for one game day and then leaves.</UNMS_ReturnHome>
   <UNMS_Stale>The destination or exact target is no longer available. This offer cannot be accepted.</UNMS_Stale>
-  <UNMS_UnsafeCleanup>This site still contains player people, cargo or required targets. Clear it safely before removal.</UNMS_UnsafeCleanup>
+  <UNMS_UnsafeCleanup>Player units, prisoners, other active quest targets or native safety checks prevent removal. Abandoned loot and equipment are lost on closure.</UNMS_UnsafeCleanup>
   <UNMS_RemoveSite>Close cleared UN site</UNMS_RemoveSite>
   <UNMS_MoveMarker>Bring an able colonist within 8 cells of the handover marker.</UNMS_MoveMarker>
   <UNMS_Started>This operation has already started.</UNMS_Started>
@@ -54,7 +54,7 @@
   <UNMS_BionicRequired>Required replacement: {0} – {1}</UNMS_BionicRequired>
   <UNMS_ShuttleWaiting>UN pickup shuttle: eligible guests board; carry guests who cannot walk aboard if necessary.</UNMS_ShuttleWaiting>
   <UNMS_CleanupReady>Cleared operation site: will automatically disappear from the world map.</UNMS_CleanupReady>
-  <UNMS_CleanupWaiting>Operation ended. Automatic removal waits for safe clearance (people, cargo, buildings or incoming transports).</UNMS_CleanupWaiting>
+  <UNMS_CleanupWaiting>Operation ended. Removal waits for player units, prisoners, other active quest targets or native safety checks (e.g. incoming transports).</UNMS_CleanupWaiting>
   <UNMS_GuestProgress>Home: {0}/{4} | Treated: {1}/{4} | Stay complete: {2}/{4} | Departed: {3}/{4}</UNMS_GuestProgress>
   <UNMS_GuestDeparted>Departed safely</UNMS_GuestDeparted>
   <UNMS_GuestNeedsHome>Bring to the home map</UNMS_GuestNeedsHome>

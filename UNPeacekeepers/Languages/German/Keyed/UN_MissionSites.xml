@@ -18,7 +18,7 @@
   <UNMS_EnemiesRemain>Die Lagerwachen müssen besiegt oder kampfunfähig sein, bevor die zugewiesenen Gefangenen befreit werden.</UNMS_EnemiesRemain>
   <UNMS_ReturnHome>Diese Personen stehen vorübergehend unter Spielerkontrolle. Bringe sie zur Heimatkarte. Nach Stabilisierung bleiben sie je einen Spieltag als Gäste und reisen selbstständig ab.</UNMS_ReturnHome>
   <UNMS_Stale>Der Zielort oder die genaue Zielperson ist nicht mehr verfügbar. Dieses Angebot kann nicht angenommen werden.</UNMS_Stale>
-  <UNMS_UnsafeCleanup>Auf diesem Einsatzort befinden sich noch eigene Personen, Güter oder benötigte Zielpersonen. Räume ihn sicher, bevor er entfernt wird.</UNMS_UnsafeCleanup>
+  <UNMS_UnsafeCleanup>Eigene Einheiten, Gefangene, andere aktive Questziele oder RimWorld-Schutzbedingungen verhindern die Entfernung. Zurückgelassene Beute und Ausrüstung gehen beim Schließen verloren.</UNMS_UnsafeCleanup>
   <UNMS_RemoveSite>Geräumten UN-Einsatzort schließen</UNMS_RemoveSite>
   <UNMS_MoveMarker>Bringe einen einsatzfähigen Kolonisten bis auf 8 Felder an den Übergabepunkt.</UNMS_MoveMarker>
   <UNMS_Started>Dieser Einsatz läuft bereits.</UNMS_Started>
@@ -54,7 +54,7 @@
   <UNMS_BionicRequired>Erforderlicher Ersatz: {0} – {1}</UNMS_BionicRequired>
   <UNMS_ShuttleWaiting>UN-Abholshuttle: abreisefähige Personen steigen ein; nicht gehfähige Personen bei Bedarf an Bord tragen.</UNMS_ShuttleWaiting>
   <UNMS_CleanupReady>Geräumter Einsatzort: wird automatisch von der Weltkarte entfernt.</UNMS_CleanupReady>
-  <UNMS_CleanupWaiting>Einsatz beendet. Automatische Entfernung wartet auf sichere Räumung (Personen, Güter, Gebäude oder ankommende Transporte).</UNMS_CleanupWaiting>
+  <UNMS_CleanupWaiting>Einsatz beendet. Entfernung wartet auf eigene Einheiten, Gefangene, andere aktive Questziele oder native Schutzbedingungen (z. B. ankommende Transporte).</UNMS_CleanupWaiting>
   <UNMS_GuestProgress>Heimgebracht: {0}/{4} | Versorgt: {1}/{4} | Gästezeit beendet: {2}/{4} | Abgereist: {3}/{4}</UNMS_GuestProgress>
   <UNMS_GuestDeparted>Sicher abgereist</UNMS_GuestDeparted>
   <UNMS_GuestNeedsHome>Zur Heimatkarte bringen</UNMS_GuestNeedsHome>

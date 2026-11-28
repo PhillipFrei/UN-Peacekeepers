@@ -13,10 +13,9 @@ namespace UNPeacekeepers
         // was omitted. A failed placement can still have merged part of the stack.
         public static int RemainingAfterAttempt(int before,int callbackRemaining,int requested,bool placed)
             =>placed?Math.Min(callbackRemaining,RemainingAfterPlacement(before,requested)):callbackRemaining;
-        public static bool CanCloseSite(bool reserved,bool playerHome,bool people,bool assets)
-            =>!reserved&&!playerHome&&!people&&!assets;
-        public static bool IsUnverifiedSiteItem(int originalCount,int currentCount)
-            =>currentCount>0&&(originalCount<0||currentCount>originalCount);
+        // Loose cargo, loot and ordinary NPCs are intentionally not cleanup blockers.
+        public static bool CanCloseSite(bool reserved,bool playerHome,bool protectedUnits,bool nativeBlocked)
+            =>!reserved&&!playerHome&&!protectedUnits&&!nativeBlocked;
         public const int GuestStayTicks=60000;
         public static bool UsesGuestStay(int kind)=>kind==1||kind==2||kind==3;
         public static bool GuestStayComplete(int since,int now)=>since>=0&&(long)now-since>=GuestStayTicks;

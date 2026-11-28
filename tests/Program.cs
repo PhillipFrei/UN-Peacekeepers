@@ -76,13 +76,10 @@ class Program
         Check(UNMissionPolicy.RemainingAfterAttempt(1500,1500,500,true)==1000,"Successful placement without callback");
         Check(UNMissionPolicy.RemainingAfterAttempt(1500,1350,500,false)==1350,"Partial merge on failure");
         Check(UNMissionPolicy.RemainingAfterAttempt(1500,1500,500,false)==1500,"Blocked placement preserves balance");
-        // All independent cleanup blockers must be absent, including pending follow-up offers.
+        // Only active site reservations, home maps, protected units and native safety block removal.
         for(int mask=0;mask<16;mask++)
             Check(UNMissionPolicy.CanCloseSite((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0)==(mask==0),"Cleanup blockers "+mask);
-        Check(UNMissionPolicy.IsUnverifiedSiteItem(-1,1),"Unknown or newly imported cargo blocks removal");
-        Check(UNMissionPolicy.IsUnverifiedSiteItem(10,11),"Merged imported cargo blocks removal");
-        Check(!UNMissionPolicy.IsUnverifiedSiteItem(10,10)&&!UNMissionPolicy.IsUnverifiedSiteItem(10,5),"Original unchanged or consumed cargo does not block");
-        Check(!UNMissionPolicy.IsUnverifiedSiteItem(-1,0),"No remaining item");
+        Check(UNMissionPolicy.CanCloseSite(false,false,false,false),"Finished site closes regardless of abandoned cargo or ordinary NPCs");
         for(int kind=0;kind<=6;kind++)
             Check(UNMissionPolicy.UsesGuestStay(kind)==(kind==1||kind==2||kind==3),"Civilian guest types only "+kind);
         Check(!UNMissionPolicy.GuestStayComplete(-1,60000),"No stay without recovery");
