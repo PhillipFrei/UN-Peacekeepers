@@ -33,4 +33,19 @@
   <UNM_RepairOutcome>Spielstandreparatur: gespeichertes Missionsergebnis für „{0}“ wird nachgeholt.</UNM_RepairOutcome>
   <UNM_RepairPaymentUnknown>Alte Mission „{0}“ war bereits als abgerechnet gespeichert. Die tatsächliche Auszahlung ist nicht eindeutig nachweisbar; keine erneute Gunst- oder Silberbuchung.</UNM_RepairPaymentUnknown>
   <UNM_RepairTechnical>Spielstandreparatur: „{0}“ hat unvollständige technische Missionsdaten und wird ohne zusätzliche Gunststrafe beendet. Keine Erfolgsbelohnung.</UNM_RepairTechnical>
+  <UNM_PaymentPodJournal>Silber für „{0}“: {1} Silber per Transportkapsel zur Heimatkarte geliefert.</UNM_PaymentPodJournal>
+  <UNM_PaymentPodTitle>UN-Silberbelohnung</UNM_PaymentPodTitle>
+  <UNM_PaymentPodText>Für „{0}“ liefert die UN {1} Silber per Transportkapsel. Springe zur Landestelle, um die Belohnung zu finden.</UNM_PaymentPodText>
+  <UNM_SupplementLetterTitle>Freiwilliger Zusatzauftrag</UNM_SupplementLetterTitle>
+  <UNM_SupplementRecipient>Empfänger: {0}</UNM_SupplementRecipient>
+  <UNM_SupplementSite>Einsatzort: Weltkartenfeld {0}</UNM_SupplementSite>
+  <UNM_SupplementGoods>{0}: {1}</UNM_SupplementGoods>
+  <UNM_SupplementSilver>Silberbelohnung: {0}</UNM_SupplementSilver>
+  <UNM_SupplementGoodwill>Gunst: +{0} bei der UN und +{0} bei {1} (Diplomatiegrenzen gelten).</UNM_SupplementGoodwill>
+  <UNM_SupplementExpiry>Annahmefrist: noch {0} Tage</UNM_SupplementExpiry>
+  <UNM_SupplementDuration>Missionsdauer nach Annahme: {0} Tage</UNM_SupplementDuration>
+  <UNM_SupplementRules>Ablehnung oder Ablauf ohne Strafe. Kein Hauptmissionsplatz. Nach Annahme −5 UN-Gunst bei Scheitern. Überschüssige UN-Gunst über +100 wird in Silber ausgezahlt.</UNM_SupplementRules>
+  <UNM_SupplementDecline>Ablehnen</UNM_SupplementDecline>
+  <UNM_SupplementUnavailable>Dieses Angebot ist nicht mehr verfügbar.</UNM_SupplementUnavailable>
+  <UNM_SupplementNoPawn>Zur Annahme wird ein verfügbarer Kolonist auf einer Heimatkarte benötigt.</UNM_SupplementNoPawn>
 </LanguageData>

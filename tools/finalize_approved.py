@@ -36,7 +36,7 @@ with zipfile.ZipFile(out) as z,zipfile.ZipFile(base) as b:
         if name.endswith('.xml'):ET.fromstring(z.read(name))
     meta=ET.fromstring(z.read(prefix+'About/About.xml'))
     assert meta.findtext('packageId')=='local.geneva.unpeacekeepers'
-    assert '0.3.4' in meta.findtext('description')
+    assert '0.3.5' in meta.findtext('description')
     for n in z.namelist():
         if n[len(prefix):] not in changed:assert z.read(n)==b.read(n),n
 sha=digest(out.read_bytes())

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <LetterDef>
+    <defName>UN_SupplementOfferLetter</defName>
+    <letterClass>UNPeacekeepers.UNSupplementLetter</letterClass>
+    <color>(0.35,0.65,0.95)</color>
+    <flashInterval>0</flashInterval>
+    <arriveSound>LetterArrive</arriveSound>
+  </LetterDef>
+</Defs>

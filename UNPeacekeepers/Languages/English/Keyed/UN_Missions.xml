@@ -33,4 +33,19 @@
   <UNM_RepairOutcome>Save repair: completing the recorded outcome for “{0}”.</UNM_RepairOutcome>
   <UNM_RepairPaymentUnknown>Old mission “{0}” was already marked settled. Actual payment cannot be verified; no repeated goodwill or silver award.</UNM_RepairPaymentUnknown>
   <UNM_RepairTechnical>Save repair: “{0}” has incomplete technical mission data and will end without an additional goodwill penalty. No success reward.</UNM_RepairTechnical>
+  <UNM_PaymentPodJournal>Silver for “{0}”: {1} silver dispatched by drop pod to the home map.</UNM_PaymentPodJournal>
+  <UNM_PaymentPodTitle>UN silver reward</UNM_PaymentPodTitle>
+  <UNM_PaymentPodText>The UN is delivering {1} silver by drop pod for “{0}”. Jump to the landing spot to find the reward.</UNM_PaymentPodText>
+  <UNM_SupplementLetterTitle>Optional follow-up mission</UNM_SupplementLetterTitle>
+  <UNM_SupplementRecipient>Recipient: {0}</UNM_SupplementRecipient>
+  <UNM_SupplementSite>Destination: world tile {0}</UNM_SupplementSite>
+  <UNM_SupplementGoods>{0}: {1}</UNM_SupplementGoods>
+  <UNM_SupplementSilver>Silver reward: {0}</UNM_SupplementSilver>
+  <UNM_SupplementGoodwill>Goodwill: +{0} with the UN and +{0} with {1} (diplomacy limits apply).</UNM_SupplementGoodwill>
+  <UNM_SupplementExpiry>Acceptance deadline: {0} days remaining</UNM_SupplementExpiry>
+  <UNM_SupplementDuration>Mission duration after acceptance: {0} days</UNM_SupplementDuration>
+  <UNM_SupplementRules>Declining or letting the offer expire has no penalty. No main mission slot. Failure after acceptance costs −5 UN goodwill. Excess UN goodwill above +100 is paid in silver.</UNM_SupplementRules>
+  <UNM_SupplementDecline>Decline</UNM_SupplementDecline>
+  <UNM_SupplementUnavailable>This offer is no longer available.</UNM_SupplementUnavailable>
+  <UNM_SupplementNoPawn>An available colonist on a home map is required to accept.</UNM_SupplementNoPawn>
 </LanguageData>

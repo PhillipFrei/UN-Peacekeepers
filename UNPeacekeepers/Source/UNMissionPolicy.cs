@@ -5,6 +5,7 @@ namespace UNPeacekeepers
     public static class UNMissionPolicy
     {
         public const int RefillTicks=180000, InactivityTicks=600000, MaxActive=5;
+        public static int RemainingAfterDropDispatch(int pending,bool dispatched)=>dispatched?0:Math.Max(0,pending);
         public static int RemainingAfterPlacement(int pending,int placed)=>Math.Max(0,pending-Math.Max(0,placed));
         // A native terminal state, acceptance and a proven objective are required for success.
         public static bool CanSettle(bool accepted,bool settled,bool endedSuccess,bool endedFailed,bool achieved)
