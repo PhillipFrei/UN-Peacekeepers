@@ -23,8 +23,8 @@ jobs:
         run: python3 tools/package.py
       - uses: actions/upload-artifact@v4
         with:
-          name: UN-Peacekeepers-${{ github.ref_name == 'release/0.3.3-alpha' && 'v0.3.3-alpha-development' || 'v0.3.2-alpha-complete' }}
+          name: UN-Peacekeepers-v0.3.3-alpha-CI-base
           path: |
-            UN_Peacekeepers_v0.3.2-alpha.zip
-            UN_Peacekeepers_v0.3.2-alpha.zip.sha256
+            UN_Peacekeepers_v0.3.3-alpha-CI-base.zip
+            UN_Peacekeepers_v0.3.3-alpha-CI-base.zip.sha256
           if-no-files-found: error
