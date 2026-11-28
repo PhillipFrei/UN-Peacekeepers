@@ -112,6 +112,19 @@ class Program
         for(int mask=0;mask<64;mask++)
             Check(UNMissionPolicy.CanConfirmGuestLaunch((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,(mask&8)!=0,(mask&16)!=0,(mask&32)!=0)==(mask==61),"Guest launch proof "+mask);
         Check(!UNMissionPolicy.AllDeparted(5,4)&&UNMissionPolicy.AllDeparted(5,5)&&!UNMissionPolicy.AllDeparted(0,0),"No partial or empty group completion");
+        for(int required=1;required<=20;required++)
+        for(int departed=0;departed<=required;departed++)
+        for(int remaining=0;remaining<=required;remaining++)
+        for(int field=0;field<=remaining;field++)
+            Check(UNMissionPolicy.MedicalObjectivesComplete(required,remaining,field,departed)==
+                (remaining+departed==required&&field==remaining),"Medical group accounting");
+        Check(!UNMissionPolicy.MedicalObjectivesComplete(0,0,0,0),"No empty medical success");
+        Check(!UNMissionPolicy.MedicalObjectivesComplete(4,3,3,2),"No duplicated credit");
+        for(int mask=0;mask<8;mask++)
+            Check(UNMissionPolicy.CanCountFieldRecovery((mask&1)!=0,(mask&2)!=0,(mask&4)!=0)==(mask==5),"Field route proof "+mask);
+        for(int mask=0;mask<64;mask++)
+            Check(UNMissionPolicy.MedicalRecoveryComplete((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,
+                (mask&8)!=0?1:0,(mask&16)!=0?1:0,(mask&32)!=0)==(mask==33),"Medical recovery conditions "+mask);
         // Migration only trusts persisted outcomes or complete positive evidence.
         for(int mask=0;mask<32;mask++)
         {

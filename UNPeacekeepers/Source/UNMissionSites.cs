@@ -332,6 +332,9 @@ namespace UNPeacekeepers
                 if(patientCount<=0||present+(HasGuestPhase?departedGuests.Count:0)!=patientCount)return false;
             }
             if(guestPickupActive&&(shuttle==null||guestPickup.Count==0||guestPickup.Any(p=>p==null)))return false;
+            if(kind==1&&generated&&bionicCase&&(patientCount!=1||requiredLimbIndex<0||string.IsNullOrEmpty(requiredBionic)||
+                DefDatabase<HediffDef>.GetNamedSilentFail(requiredBionic)==null))return false;
+            RememberMedicalHomePatients();
             return true;
         }
         public void RequestCompletion(bool success,UNMissionFailure reason=UNMissionFailure.Unknown)=>Finish(success,reason);
@@ -343,6 +346,8 @@ namespace UNPeacekeepers
         // Stable ThingIDs survive individual exits and save/load, even if a world pawn is discarded.
         private Dictionary<string,int> guestSince=new Dictionary<string,int>();
         private HashSet<string> departedGuests=new HashSet<string>();
+        // Medical patients observed at home must finish the guest route.
+        private HashSet<string> medicalHomePatients=new HashSet<string>();
         private List<Pawn> guestPickup=new List<Pawn>();
         private bool guestPickupActive,guestPickupAborting,guestUnloadOrdered;
         private int nextGuestPickupAttempt;
@@ -355,6 +360,27 @@ namespace UNPeacekeepers
         bool GuestDeparted(Pawn pawn)=>pawn!=null&&departedGuests.Contains(pawn.ThingID);
         bool OnHomeHeld(Pawn pawn)=>pawn!=null&&homeMap!=null&&pawn.MapHeld==homeMap&&Find.Maps.Contains(homeMap);
         bool OnHome(Pawn pawn)=>OnHomeHeld(pawn)&&pawn.Spawned;
+        bool AtField(Pawn pawn)=>pawn!=null&&destination?.Map!=null&&pawn.MapHeld==destination.Map;
+        bool MedicalHomeRequired(Pawn pawn)=>kind==1&&pawn!=null&&
+            (medicalHomePatients.Contains(pawn.ThingID)||guestSince.ContainsKey(pawn.ThingID)||GuestDeparted(pawn)||OnHomeHeld(pawn));
+        bool FieldRecovery(Pawn pawn)=>kind==1&&pawn!=null&&pawn.Spawned&&
+            UNMissionPolicy.CanCountFieldRecovery(AtField(pawn),MedicalHomeRequired(pawn),MedicallyRecovered(pawn));
+        void RememberMedicalHomePatients()
+        {
+            if(kind!=1)return;
+            foreach(var pawn in targets.Where(p=>p!=null&&MedicalHomeRequired(p)))
+                medicalHomePatients.Add(pawn.ThingID);
+            foreach(var id in guestSince.Keys.Concat(departedGuests))medicalHomePatients.Add(id);
+        }
+        List<Pawn> RemainingMedicalOrGuestTargets()=>targets.Where(p=>p!=null&&!GuestDeparted(p)).Distinct().ToList();
+        bool MedicalObjectivesComplete()
+        {
+            if(kind!=1||!generated||!started||(shuttle!=null&&!guestPickupActive))return false;
+            var remaining=RemainingMedicalOrGuestTargets();
+            if(remaining.Any(p=>p.Dead)||remaining.Select(p=>p.ThingID).Distinct().Count()!=remaining.Count)return false;
+            return UNMissionPolicy.MedicalObjectivesComplete(patientCount,remaining.Count,remaining.Count(FieldRecovery),departedGuests.Count);
+        }
+        bool GuestRouteCandidate(Pawn pawn)=>kind!=1||MedicalHomeRequired(pawn)||!AtField(pawn);
         bool GuestHealthy(Pawn pawn)=>pawn!=null&&!pawn.Dead&&pawn.health!=null&&pawn.health.hediffSet.BleedRateTotal<=0f&&
             !pawn.health.hediffSet.HasHediff(HediffDefOf.Anesthetic)&&(kind!=1||MedicallyRecovered(pawn));
         bool GuestFactionValid=>supportedFaction!=null&&!supportedFaction.defeated&&!supportedFaction.deactivated&&!supportedFaction.HostileTo(Faction.OfPlayer);
@@ -413,8 +439,14 @@ namespace UNPeacekeepers
             if(kind==3&&enemies.Any(p=>p!=null&&!p.Dead&&!p.Downed&&p.Spawned&&p.Map==destination?.Map))
                 return "UNQ_NextGuards".Translate();
             var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
-            if(kind==1&&!remaining.Any(OnHomeHeld)&&guestSince.Count==0&&departedGuests.Count==0)
-                return "UNQ_NextHealField".Translate();
+            if(kind==1)
+            {
+                if(remaining.Any(p=>AtField(p)&&!MedicalHomeRequired(p)&&!FieldRecovery(p)))return "UNMED_NextField".Translate();
+                if(remaining.Any(p=>GuestRouteCandidate(p)&&!OnHomeHeld(p)))return "UNMED_NextTransport".Translate();
+                if(remaining.Any(p=>GuestRouteCandidate(p)&&!MedicallyRecovered(p)))return "UNMED_NextHome".Translate();
+                remaining=remaining.Where(GuestRouteCandidate).ToList();
+                if(remaining.Count==0)return "UNMED_NextReview".Translate();
+            }
             if(remaining.Any(p=>!OnHomeHeld(p)))return "UNQ_NextBringHome".Translate();
             if(remaining.Any(p=>!GuestHealthy(p)))return "UNQ_NextStabilize".Translate();
             if(!GuestFactionValid)return "UNQ_NextGuestFaction".Translate();
@@ -477,6 +509,7 @@ namespace UNPeacekeepers
             Scribe_Values.Look(ref started,"unStarted");Scribe_Values.Look(ref generated,"unGenerated");Scribe_Values.Look(ref finished,"unFinished");Scribe_Values.Look(ref shuttleSent,"unShuttleSent");Scribe_Values.Look(ref shuttleSatisfied,"unShuttleSatisfied");Scribe_Values.Look(ref began,"unBegan",-1);Scribe_References.Look(ref shuttle,"unShuttle");
             Scribe_Collections.Look(ref guestSince,"unGuestSince",LookMode.Value,LookMode.Value);
             Scribe_Collections.Look(ref departedGuests,"unDepartedGuests",LookMode.Value);
+            Scribe_Collections.Look(ref medicalHomePatients,"unMedicalHomePatients",LookMode.Value);
             Scribe_Collections.Look(ref guestPickup,"unGuestPickup",LookMode.Reference);
             Scribe_Values.Look(ref guestPickupActive,"unGuestPickupActive",false);
             Scribe_Values.Look(ref guestPickupAborting,"unGuestPickupAborting",false);
@@ -501,6 +534,7 @@ namespace UNPeacekeepers
                 if(ownedStructures==null)ownedStructures=new List<Thing>();
                 if(guestSince==null)guestSince=new Dictionary<string,int>();
                 if(departedGuests==null)departedGuests=new HashSet<string>();
+                if(medicalHomePatients==null)medicalHomePatients=new HashSet<string>();
                 if(guestPickup==null)guestPickup=new List<Pawn>();
             }
         }
@@ -590,10 +624,9 @@ namespace UNPeacekeepers
         void ProcessGuests()
         {
             guestNeedsPickup.Clear();guestShuttleUnreachable.Clear();
-            // The original field-hospital path does not require transporting people home.
-            if(kind==1&&guestSince.Count==0&&departedGuests.Count==0&&targets.Count==patientCount&&
-                targets.All(p=>p!=null&&p.Spawned&&p.Map==destination.Map&&MedicallyRecovered(p)))
-            {Finish(true);return;}
+            RememberMedicalHomePatients();
+            // Recheck actual recovery rather than permanently crediting a patient who may relapse.
+            if(MedicalObjectivesComplete()){Finish(true);return;}
             if(homeMap==null||!Find.Maps.Contains(homeMap))return;
             int now=Find.TickManager.TicksGame;
             if(guestPickupActive)
@@ -682,7 +715,7 @@ namespace UNPeacekeepers
             if(finished||quest.State!=QuestState.Ongoing||!IsMissionGuest(pawn)||pawn.Dead)return;
             if(RemainingTicks<=0){Finish(false,UNMissionFailure.Deadline);return;}
             departedGuests.Add(pawn.ThingID);
-            if(AllGuestsDeparted())Finish(true);
+            if(AllGuestsDeparted()||MedicalObjectivesComplete())Finish(true);
         }
         string SignalTag=>"Quest"+quest.id+".UNPickup";
         public override void Notify_QuestSignalReceived(Signal signal)
@@ -717,6 +750,7 @@ namespace UNPeacekeepers
                     foreach(var pawn in guestPickup)departedGuests.Add(pawn.ThingID);
                     ResetPickup();
                     if(AllGuestsDeparted()){shuttleSent=true;Finish(true);}
+                    else if(MedicalObjectivesComplete())Finish(true);
                 }
                 else if(guestLaunchAnyBoarded)Finish(false,UNMissionFailure.GuestDepartureUnverified);
                 else ResetPickup(); // confirmed empty departure; another pickup may be attempted
@@ -775,34 +809,70 @@ namespace UNPeacekeepers
             }
             else Messages.Message(DescriptionPart,MessageTypeDefOf.NeutralEvent,false);
         }
-        // Only actual medical state, not buildings, temperature or a completion gizmo.
+        // The treatment display and actual success use the same predicates.
+        bool AcuteInjury(Hediff h)=>h is Hediff_Injury&&!h.IsPermanent();
+        bool ActiveMedicalIllness(Hediff h)=>h.def.isBad&&!h.IsPermanent()&&h.TryGetComp<HediffComp_Immunizable>()!=null;
+        BodyPartRecord BionicLimb(Pawn p)=>p?.RaceProps?.body?.AllParts.FirstOrDefault(x=>x.Index==requiredLimbIndex);
+        bool RequiredBionicPresent(Pawn p)
+        {
+            if(!bionicCase)return true;
+            if(requiredLimbIndex<0||string.IsNullOrEmpty(requiredBionic)||p?.health==null)return false;
+            var part=BionicLimb(p);
+            return part!=null&&!p.health.hediffSet.PartIsMissing(part)&&
+                p.health.hediffSet.hediffs.Any(h=>h.Part==part&&h is Hediff_AddedPart&&h.def.defName==requiredBionic);
+        }
         bool MedicallyRecovered(Pawn p)
         {
-            if(p==null||p.Dead||p.health==null||p.health.hediffSet.BleedRateTotal>0f)return false;
-            if(p.health.hediffSet.hediffs.Any(h=>h.def==HediffDefOf.Anesthetic ||
-                (h is Hediff_Injury&&!h.IsPermanent()) ||
-                (h.def.isBad&&!h.IsPermanent()&&h.TryGetComp<HediffComp_Immunizable>()!=null)))return false;
-            if(bionicCase && requiredLimbIndex>=0)
+            if(p==null||p.Dead||p.health==null)return false;
+            var hs=p.health.hediffSet;
+            return UNMissionPolicy.MedicalRecoveryComplete(true,hs.BleedRateTotal>0f,hs.HasHediff(HediffDefOf.Anesthetic),
+                hs.hediffs.Count(AcuteInjury),hs.hediffs.Count(ActiveMedicalIllness),RequiredBionicPresent(p));
+        }
+        string MedicalTreatment(Pawn pawn)
+        {
+            if(pawn==null||pawn.Dead||pawn.health==null)return "UNG_Dead".Translate();
+            var hs=pawn.health.hediffSet;
+            var lines=new List<string>();
+            int injuries=hs.hediffs.Count(AcuteInjury);
+            var illnesses=hs.hediffs.Where(ActiveMedicalIllness).Select(h=>h.def.label??h.def.defName).ToList();
+            if(hs.BleedRateTotal>0f)lines.Add("UNG_Bleeding".Translate());
+            if(injuries>0)lines.Add("UNMED_Injuries".Translate(injuries));
+            if(illnesses.Count>0)lines.Add("UNMED_Illnesses".Translate(string.Join(", ",illnesses)));
+            if(bionicCase)
             {
-                var part=p.RaceProps.body.AllParts.FirstOrDefault(x=>x.Index==requiredLimbIndex);
-                if(part==null||p.health.hediffSet.PartIsMissing(part)||
-                    !p.health.hediffSet.hediffs.Any(h=>h.Part==part&&h is Hediff_AddedPart&&h.def.defName==requiredBionic))return false;
+                var limb=BionicLimb(pawn);
+                var implant=DefDatabase<ThingDef>.GetNamedSilentFail(requiredBionic??"");
+                string part=limb?.Label??"—",item=implant?.LabelCap.ToString()??requiredBionic??"—";
+                lines.Add((RequiredBionicPresent(pawn)?"UNMED_ImplantDone":"UNMED_ImplantPending").Translate(part,item));
             }
-            return true;
+            if(hs.HasHediff(HediffDefOf.Anesthetic))lines.Add("UNMS_Anesthetized".Translate());
+            if(MedicallyRecovered(pawn))lines.Add("UNMED_Recovered".Translate());
+            return string.Join(" · ",lines);
+        }
+        public string MedicalSummary()
+        {
+            if(kind!=1||!generated||finished)return null;
+            var remaining=RemainingMedicalOrGuestTargets();
+            int field=remaining.Count(p=>AtField(p)&&!MedicalHomeRequired(p));
+            int home=remaining.Count(MedicalHomeRequired)+departedGuests.Count;
+            int transit=remaining.Count-field-(home-departedGuests.Count);
+            return "UNMED_Summary".Translate(remaining.Count(FieldRecovery),field,home,patientCount,departedGuests.Count,transit);
         }
         public string GuestSummary()
         {
             if(!HasGuestPhase||!generated||finished)return null;
-            var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
-            if(kind==1&&guestSince.Count==0&&departedGuests.Count==0&&!remaining.Any(OnHomeHeld))return null;
+            var allRemaining=RemainingMedicalOrGuestTargets();
+            var remaining=allRemaining.Where(GuestRouteCandidate).ToList();
+            if(kind==1&&remaining.Count==0&&departedGuests.Count==0)return null;
             if(shuttle!=null&&!guestPickupActive)return "UNG_LegacyPickup".Translate();
             int now=Find.TickManager.TicksGame;
-            int expected=patientCount-departedGuests.Count;
+            int expected=patientCount-departedGuests.Count-(allRemaining.Count-remaining.Count);
+            int groupTotal=expected+departedGuests.Count;
             int eta=UNMissionPolicy.GroupGuestCountdown(expected,remaining.Select(p=>GuestCountdown(p,now)));
             int waiting=remaining.Count(p=>GuestCountdown(p,now)<0)+Math.Max(0,expected-remaining.Count);
             var lines=new List<string>();
             if(expected==0&&eta==0)lines.Add("UNG_AllDeparted".Translate());
-            else if(eta<0)lines.Add("UNG_GroupPending".Translate(waiting,patientCount));
+            else if(eta<0)lines.Add("UNG_GroupPending".Translate(waiting,groupTotal));
             else if(eta>0)lines.Add("UNG_GroupTime".Translate(UNQuestDisplay.Time(eta)));
             else lines.Add("UNG_GroupReady".Translate());
             if(guestPickupActive)
@@ -823,14 +893,20 @@ namespace UNPeacekeepers
         string GuestProgress()
         {
             int now=Find.TickManager.TicksGame;
-            var remaining=targets.Where(p=>p!=null&&!GuestDeparted(p)).ToList();
+            var remaining=RemainingMedicalOrGuestTargets();
+            var guests=remaining.Where(GuestRouteCandidate).ToList();
             var lines=new List<string>();
-            if(kind==1)lines.Add("UNMS_Recovered".Translate(departedGuests.Count+remaining.Count(MedicallyRecovered),patientCount).ToString());
-            if(kind!=1||guestSince.Count>0||departedGuests.Count>0||remaining.Any(OnHomeHeld))
+            if(kind==1)
             {
-                lines.Add("UNMS_GuestProgress".Translate(departedGuests.Count+remaining.Count(p=>OnHomeHeld(p)||PickupPassenger(p)&&OnPickupShuttle(p)),
-                    departedGuests.Count+remaining.Count(p=>(OnHomeHeld(p)||PickupPassenger(p)&&OnPickupShuttle(p))&&GuestHealthy(p)),
-                    departedGuests.Count+remaining.Count(p=>GuestCountdown(p,now)==0),departedGuests.Count,patientCount).ToString());
+                lines.Add("UNMS_Recovered".Translate(departedGuests.Count+remaining.Count(MedicallyRecovered),patientCount));
+                var medical=MedicalSummary();if(!medical.NullOrEmpty())lines.Add(medical);
+            }
+            if(kind!=1||guests.Count>0||departedGuests.Count>0)
+            {
+                int guestTotal=patientCount-(remaining.Count-guests.Count);
+                lines.Add("UNMS_GuestProgress".Translate(departedGuests.Count+guests.Count(p=>OnHomeHeld(p)||PickupPassenger(p)&&OnPickupShuttle(p)),
+                    departedGuests.Count+guests.Count(p=>(OnHomeHeld(p)||PickupPassenger(p)&&OnPickupShuttle(p))&&GuestHealthy(p)),
+                    departedGuests.Count+guests.Count(p=>GuestCountdown(p,now)==0),departedGuests.Count,guestTotal).ToString());
                 var summary=GuestSummary();if(!summary.NullOrEmpty())lines.Add(summary);
             }
             foreach(var pawn in targets.Where(p=>p!=null))
@@ -839,9 +915,12 @@ namespace UNPeacekeepers
                 int countdown=GuestCountdown(pawn,now);
                 if(GuestDeparted(pawn))state="UNMS_GuestDeparted".Translate();
                 else if(pawn.Dead)state="UNG_Dead".Translate();
+                else if(kind==1&&AtField(pawn)&&!MedicalHomeRequired(pawn))
+                    state=FieldRecovery(pawn)?"UNMED_FieldReady".Translate().ToString():
+                        pawn.Spawned?"UNMED_FieldTreatment".Translate().ToString():"UNMED_FieldHeld".Translate().ToString();
                 else if(shuttle!=null&&!guestPickupActive)state=OnPickupShuttle(pawn)?"UNG_Boarded".Translate().ToString():"UNG_LegacyPickup".Translate().ToString();
                 else if(!OnHomeHeld(pawn)&&!(PickupPassenger(pawn)&&OnPickupShuttle(pawn)))
-                    state=kind==1?(MedicallyRecovered(pawn)?"UNMS_Well":"UNMS_Unwell").Translate().ToString():"UNMS_GuestNeedsHome".Translate().ToString();
+                    state=kind==1?"UNMED_Transport".Translate().ToString():"UNMS_GuestNeedsHome".Translate().ToString();
                 else if(pawn.health?.hediffSet.HasHediff(HediffDefOf.Anesthetic)==true)state="UNMS_Anesthetized".Translate();
                 else if(pawn.health?.hediffSet.BleedRateTotal>0f)state="UNG_Bleeding".Translate();
                 else if(!GuestHealthy(pawn))state="UNMS_Unwell".Translate();
@@ -864,11 +943,7 @@ namespace UNPeacekeepers
                     state=shuttle!=null?"UNG_NextPickupBatch".Translate().ToString():"UNG_WaitPickup".Translate().ToString();
                 else state="UNG_ExitGrace".Translate(UNQuestDisplay.Time(UNMissionPolicy.ExitGraceRemaining(GuestSince(pawn),now)));
                 lines.Add(pawn.LabelShortCap+": "+state);
-            }
-            if(bionicCase && requiredLimbIndex>=0)
-            {
-                var limb=targets.FirstOrDefault()?.RaceProps.body.AllParts.FirstOrDefault(x=>x.Index==requiredLimbIndex);
-                if(limb!=null)lines.Add("UNMS_BionicRequired".Translate(limb.Label,DefDatabase<ThingDef>.GetNamedSilentFail(requiredBionic)?.LabelCap.ToString()??requiredBionic));
+                if(kind==1&&!GuestDeparted(pawn)&&!pawn.Dead)lines.Add("  "+MedicalTreatment(pawn));
             }
             return string.Join("\n",lines);
         }
@@ -907,11 +982,21 @@ namespace UNPeacekeepers
             string name=part.def.defName=="Shoulder"?"BionicArm":"BionicLeg";
             var item=DefDatabase<ThingDef>.GetNamedSilentFail(name);
             if(item==null||DefDatabase<HediffDef>.GetNamedSilentFail(name)==null)return false;
+            // Place the correct implant before creating the missing limb.
+            var implant=ThingMaker.MakeThing(item);
+            if(!GenPlace.TryPlaceThing(implant,center,map,ThingPlaceMode.Near))
+            {
+                if(!implant.Destroyed&&!implant.Spawned)implant.Destroy();
+                return false;
+            }
             requiredLimbIndex=part.Index;requiredBionic=name;
             p.health.AddHediff(HediffDefOf.MissingBodyPart,part);
-            GenPlace.TryPlaceThing(ThingMaker.MakeThing(item),center,map,ThingPlaceMode.Near);
             var medicine=ThingMaker.MakeThing(ThingDefOf.MedicineIndustrial);medicine.stackCount=6;
-            GenPlace.TryPlaceThing(medicine,center,map,ThingPlaceMode.Near);
+            if(!GenPlace.TryPlaceThing(medicine,center,map,ThingPlaceMode.Near))
+            {
+                if(!medicine.Destroyed&&!medicine.Spawned)medicine.Destroy();
+                Log.Warning("[UN Peacekeepers] Medical quest "+quest.id+": supplied medicine could not be placed.");
+            }
             return true;
         }
         public void Generate(Map map)
@@ -931,7 +1016,14 @@ namespace UNPeacekeepers
                         GenSpawn.Spawn(p,CellFinder.RandomClosewalkCellNear(center,map,7),map);
                         if(kind==3)p.guest.SetGuestStatus(enemyFaction,GuestStatus.Prisoner);
                         if(kind==1&&bionicCase)
-                        {if(!GenerateBionicCase(p,map,center)){bionicCase=false;GenerateInjuries(p);}}
+                        {
+                            if(!GenerateBionicCase(p,map,center))
+                            {
+                                bionicCase=false;requiredLimbIndex=-1;requiredBionic=null;GenerateInjuries(p);
+                                quest.description=OfferDescription;
+                                Messages.Message("UNMED_BionicFallback".Translate(),MessageTypeDefOf.NeutralEvent,false);
+                            }
+                        }
                         else if(kind==1||kind==3)GenerateInjuries(p);
                     }
                     if(kind==1)

@@ -39,7 +39,7 @@
   <UNMS_Kind5>Military intervention</UNMS_Kind5>
   <UNMS_Kind6>Elite arrest</UNMS_Kind6>
   <UNMS_Goal0>Transport every listed item to this destination. At a settlement, select the caravan and deliver; at a camp, unload goods within 8 cells of the handover marker and review the objective. Multiple trips are allowed.</UNMS_Goal0>
-  <UNMS_Goal1>Heal every patient of acute injuries and curable infections/diseases. No room, temperature or bed requirements. The quest completes automatically at the site; patients transported home each stay as guests for one game day after recovery, then leave.</UNMS_Goal1>
+  <UNMS_Goal1>Heal every patient of acute injuries and curable infections/diseases. No room, temperature or bed requirements. Recovered field patients count at quest completion; patients transported home each stay as guests for one game day after full recovery, then depart safely. Both treatment routes may be combined.</UNMS_Goal1>
   <UNMS_Goal2>Take temporary responsibility for every assigned civilian at the handover point. Bring them home alive, stop bleeding and wait for anesthesia to wear off. Each stays as a guest for one game day; all must depart safely.</UNMS_Goal2>
   <UNMS_Goal3>Free every assigned prisoner after the guards are defeated or incapacitated. Bring them home alive and stabilize them. Each stays as a guest for one game day; all must depart safely.</UNMS_Goal3>
   <UNMS_Goal4>Keep every assigned civilian and the marked handover point alive for the entire stated defense period, then defeat/incapacitate all assigned attackers.</UNMS_Goal4>
@@ -61,4 +61,19 @@
   <UNMS_GuestLeaving>Departing / waiting for a safe route</UNMS_GuestLeaving>
   <UNMS_GuestHours>Guest – {0:0.0} game hours remaining</UNMS_GuestHours>
   <UNMS_GuestNoRecruit>{0} is a temporary UN mission guest and cannot be recruited.</UNMS_GuestNoRecruit>
+  <UNMED_NextField>Fully treat the remaining field patients or transport them to the home map.</UNMED_NextField>
+  <UNMED_NextTransport>Bring patients outside the field hospital to the home map. Complete any started home treatment there.</UNMED_NextTransport>
+  <UNMED_NextHome>Fully treat the home-map patients before their guest stay begins.</UNMED_NextHome>
+  <UNMED_NextReview>Checking the recovery of remaining field patients.</UNMED_NextReview>
+  <UNMED_Injuries>Acute injuries: {0}</UNMED_Injuries>
+  <UNMED_Illnesses>Treatable illnesses: {0}</UNMED_Illnesses>
+  <UNMED_ImplantDone>Required implant installed: {0} – {1}</UNMED_ImplantDone>
+  <UNMED_ImplantPending>Surgery pending: {0} – {1}</UNMED_ImplantPending>
+  <UNMED_Recovered>Medical requirements met</UNMED_Recovered>
+  <UNMED_Summary>Field hospital recovered: {0}/{1} | Home treatment: {2}/{3} ({4} departed safely) | Elsewhere/in transit: {5}</UNMED_Summary>
+  <UNMED_FieldReady>Recovered at the site – counts when all quest objectives are met</UNMED_FieldReady>
+  <UNMED_FieldTreatment>Treatment required at the operation site</UNMED_FieldTreatment>
+  <UNMED_FieldHeld>At the site – release from transport/carrying</UNMED_FieldHeld>
+  <UNMED_Transport>Bring to the home map – complete treatment and guest stay there</UNMED_Transport>
+  <UNMED_BionicFallback>The bionic case could not be prepared safely. A normal medical mission applies instead.</UNMED_BionicFallback>
 </LanguageData>

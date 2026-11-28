@@ -39,7 +39,7 @@
   <UNMS_Kind5>Militärische Intervention</UNMS_Kind5>
   <UNMS_Kind6>Elite-Festnahme</UNMS_Kind6>
   <UNMS_Goal0>Transportiere alle genannten Güter an diesen Zielort. Bei Siedlungen die Karawane auswählen und abgeben; im Lager Güter bis auf 8 Felder zum Übergabepunkt bringen und dort das Ziel prüfen. Mehrere Fahrten sind erlaubt.</UNMS_Goal0>
-  <UNMS_Goal1>Heile alle Patienten von akuten Verletzungen und heilbaren Infektionen/Krankheiten. Keine Raum-, Temperatur- oder Bettvorgaben. Am Einsatzort endet die Quest automatisch; bei Heimtransport bleibt jeder Genesene einen Spieltag als Gast und reist anschließend ab.</UNMS_Goal1>
+  <UNMS_Goal1>Heile alle Patienten von akuten Verletzungen und heilbaren Infektionen/Krankheiten. Keine Raum-, Temperatur- oder Bettvorgaben. Vor Ort genesene Patienten zählen bei Questabschluss; zur Heimatkarte transportierte Patienten bleiben nach vollständiger Genesung einen Spieltag als Gäste und reisen sicher ab. Beide Behandlungswege dürfen kombiniert werden.</UNMS_Goal1>
   <UNMS_Goal2>Übernimm alle zugewiesenen Zivilisten am Übergabepunkt. Bringe sie lebend zur Heimatkarte, stille Blutungen und warte das Ende der Narkose ab. Jeder bleibt einen Spieltag als Gast; alle müssen sicher abreisen.</UNMS_Goal2>
   <UNMS_Goal3>Befreie alle zugewiesenen Gefangenen nach Ausschaltung der Wachen. Bringe sie lebend zur Heimatkarte und stabilisiere sie. Jeder bleibt einen Spieltag als Gast; alle müssen sicher abreisen.</UNMS_Goal3>
   <UNMS_Goal4>Halte alle zugewiesenen Zivilisten und den markierten Übergabepunkt für die gesamte angegebene Schutzdauer am Leben; besiege oder entwaffne alle zugewiesenen Angreifer.</UNMS_Goal4>
@@ -61,4 +61,19 @@
   <UNMS_GuestLeaving>Abreise läuft / wartet auf sicheren Weg</UNMS_GuestLeaving>
   <UNMS_GuestHours>Gast – noch {0:0.0} Spielstunden</UNMS_GuestHours>
   <UNMS_GuestNoRecruit>{0} ist ein vorübergehender UN-Missionsgast und kann nicht rekrutiert werden.</UNMS_GuestNoRecruit>
+  <UNMED_NextField>Verbliebene Patienten am Einsatzort vollständig behandeln oder zur Heimatkarte transportieren.</UNMED_NextField>
+  <UNMED_NextTransport>Patienten außerhalb des Feldlazaretts zur Heimatkarte bringen. Bereits begonnene Heimversorgung dort abschließen.</UNMED_NextTransport>
+  <UNMED_NextHome>Patienten auf der Heimatkarte vollständig behandeln, dann beginnt die Gästezeit.</UNMED_NextHome>
+  <UNMED_NextReview>Genesungszustand der verbliebenen Feldpatienten wird geprüft.</UNMED_NextReview>
+  <UNMED_Injuries>Akute Verletzungen: {0}</UNMED_Injuries>
+  <UNMED_Illnesses>Behandelbare Erkrankungen: {0}</UNMED_Illnesses>
+  <UNMED_ImplantDone>Erforderliches Implantat eingesetzt: {0} – {1}</UNMED_ImplantDone>
+  <UNMED_ImplantPending>Operation ausstehend: {0} – {1}</UNMED_ImplantPending>
+  <UNMED_Recovered>Medizinische Anforderungen erfüllt</UNMED_Recovered>
+  <UNMED_Summary>Feldlazarett genesen: {0}/{1} | Heimversorgung: {2}/{3} (davon {4} sicher abgereist) | Andere/Transport: {5}</UNMED_Summary>
+  <UNMED_FieldReady>Vor Ort genesen – zählt bei vollständigem Questabschluss</UNMED_FieldReady>
+  <UNMED_FieldTreatment>Behandlung am Einsatzort erforderlich</UNMED_FieldTreatment>
+  <UNMED_FieldHeld>Am Einsatzort – aus Transport/Tragezustand entlassen</UNMED_FieldHeld>
+  <UNMED_Transport>Zur Heimatkarte bringen – dort Behandlung und Gästezeit abschließen</UNMED_Transport>
+  <UNMED_BionicFallback>Der bionische Sonderfall konnte nicht sicher vorbereitet werden. Stattdessen gilt ein normaler medizinischer Einsatz.</UNMED_BionicFallback>
 </LanguageData>

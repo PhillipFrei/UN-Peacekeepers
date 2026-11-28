@@ -45,6 +45,14 @@ namespace UNPeacekeepers
         public static bool GuestStayComplete(int since,int now)=>since>=0&&(long)now-since>=GuestStayTicks;
         public static int GuestTicksRemaining(int since,int now)=>since<0?GuestStayTicks:(int)Math.Max(0,Math.Min(GuestStayTicks,(long)since+GuestStayTicks-now));
         public static bool AllDeparted(int required,int departed)=>required>0&&departed==required;
+        // Only mutually exclusive, verified patient routes may contribute to success.
+        public static bool MedicalObjectivesComplete(int required,int remaining,int fieldRecovered,int departed)
+            =>required>0&&remaining>=0&&departed>=0&&fieldRecovered>=0&&
+              (long)remaining+departed==required&&fieldRecovered==remaining;
+        public static bool CanCountFieldRecovery(bool atField,bool homePath,bool recovered)
+            =>atField&&!homePath&&recovered;
+        public static bool MedicalRecoveryComplete(bool alive,bool bleeding,bool anesthetized,int acuteInjuries,int activeIllnesses,bool requiredImplantPresent)
+            =>alive&&!bleeding&&!anesthetized&&acuteInjuries==0&&activeIllnesses==0&&requiredImplantPresent;
         // A saved explicit outcome takes precedence over reconstruction; never turn a recorded failure into success.
         public static int RecordedOutcome(bool finished,bool achieved,bool delivered,bool shuttleConfirmed,bool guestsDeparted)
             =>finished?(achieved?1:-1):achieved||delivered||shuttleConfirmed||guestsDeparted?1:0;
